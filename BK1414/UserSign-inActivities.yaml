@@ -1,0 +1,1101 @@
+# =============================================================================
+# User Sign-in Activities Dashboard — Falcon Next-Gen SIEM
+#
+# Reference implementation. Fal.Con 2026 session BK-1414.
+#
+# CHANGEME — environment-specific values you MUST review before this works.
+# Every item below is specific to the environment this was built in. Left
+# as-is, the affected widgets return zero results rather than erroring, so
+# verify each one instead of assuming an empty widget means "no activity."
+#
+#   1. Windows AD noise exclusions (Windows AD widget; Success/Failure widget)
+#      LogonType restricted to 2, 7, 9, 10, 11 (interactive / RDP only).
+#      TargetDomainName excludes "Window Manager", "Font Driver Host",
+#      "NT AUTHORITY". Tune to your own service-account and OS noise.
+#
+#   2. VMware vCenter exclusion: !user.name=*@127.0.0.1*
+#      Drops loopback service sessions. Adjust to your automation accounts.
+#
+#   3. Zscaler ZPA exclusion: user.name!="ZPA IP Anchor"
+#      Synthetic ZPA identity, not a real user.
+#
+#   4. Service accounts are NOT hard-coded out.
+#      Exclude them at runtime with the "Exclude Username" parameter. This is
+#      intentional — the list is environment-specific and analysts wanted
+#      control. Hard-code them here if you would rather they never appear.
+#
+# NOTE ON COVERAGE: Success/Failure by Source covers all 13 sources. The Timeline, 
+# Source IP Summary, and Country widgets cover only the four highest-volume sources 
+# for the example implementation (Entra ID, Defender Identity, ZPA, Salesforce). 
+# Extend those OR blocks if you want full coverage in the summary widgets.
+# =============================================================================
+sections:
+  section-1785541560988-0:
+    collapsed: false
+    order: 2
+    title: Other Source-Specific Drill-Down
+    widgetIds:
+    - a1b2c3d4-0005-4000-8000-000000000005
+    - a1b2c3d4-0006-4000-8000-000000000006
+    - a1b2c3d4-0007-4000-8000-000000000007
+    - a1b2c3d4-0010-4000-8000-000000000010
+    - a1b2c3d4-0012-4000-8000-000000000012
+    - a1b2c3d4-0013-4000-8000-000000000013
+    - a1b2c3d4-0014-4000-8000-000000000014
+    - a1b2c3d4-0015-4000-8000-000000000015
+    - a1b2c3d4-0016-4000-8000-000000000016
+    - a1b2c3d4-0017-4000-8000-f5bigip00001
+    - a1b2c3d4-0018-4000-8000-mimecast00001
+    - a1b2c3d4-0011-4000-8000-000000000011
+  section-1785541748988-2:
+    collapsed: false
+    order: 1
+    title: Entra ID Drill-Down
+    widgetIds:
+    - a1b2c3d4-0004b-entra-client-app
+    - a1b2c3d4-0004c-entra-mfa-method
+    - a1b2c3d4-0004d-entra-os
+    - a1b2c3d4-0004g-entra-compliance
+    - a1b2c3d4-0004f-entra-top-apps
+    - a1b2c3d4-0004e2-entra-risk-medium
+    - a1b2c3d4-0004e1-entra-risk-high
+    - a1b2c3d4-0004-4000-8000-000000000004
+  section-1785541794989-3:
+    collapsed: false
+    order: 0
+    title: Cross-Source Investigation
+    widgetIds:
+    - a1b2c3d4-0001-4000-8000-000000000001
+    - a1b2c3d4-0009-4000-8000-000000000009
+    - a1b2c3d4-0003-4000-8000-000000000003
+    - a1b2c3d4-0002-4000-8000-000000000002
+name: User Sign-in Activities
+updateFrequency: never
+description: Cross-source user sign-in activity dashboard. Filter by username (UPN/email)
+  to see activity across Entra ID, Defender Identity, Zscaler ZPA, Salesforce, CyberArk, 
+  Mimecast SSO (via Falcon Sensor), CrowdStrike Falcon Next-Gen Identity Security, and more.
+timeSelector: {}
+sharedTimeInterval:
+  enabled: true
+  isLive: false
+  start: 7d
+widgets:
+  a1b2c3d4-0012-4000-8000-000000000012:
+    x: 0
+    y: 12
+    height: 6
+    queryString: |
+      #Vendor="paloalto" #event.module="ngfw" #event.dataset="ngfw.system"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | (event.action="auth-success" OR event.action="auth-fail")
+      | user.name=?username
+      | !user.name=?exclude_username
+      | source.ip=?source_ip
+      | !source.ip=?exclude_source_ip
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, user.name, source.ip, observer.hostname, event.action, Outcome], limit=10000)
+      | rename([[TimeStr, Time], [user.name, User], [source.ip, "Source IP"], [observer.hostname, Firewall], [event.action, Action], [Outcome, Result]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 6
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Palo Alto NGFW Authentication
+    isLive: false
+    type: query
+  a1b2c3d4-0004e2-entra-risk-medium:
+    x: 2
+    y: 4
+    height: 4
+    queryString: |
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username
+      | !user.name=?exclude_username
+      | Vendor.properties.appDisplayName=?app_name
+      | !Vendor.properties.appDisplayName=?exclude_app_name
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | Vendor.properties.riskLevelAggregated = "medium"
+      | count()
+    end: now
+    start: 7d
+    width: 2
+    options:
+      default: {}
+      text-color: '#E8871E'
+    visualization: single-value
+    title: 'Entra: Medium Risk Sign-ins'
+    isLive: false
+    type: query
+  a1b2c3d4-0014-4000-8000-000000000014:
+    x: 0
+    y: 18
+    height: 6
+    queryString: |
+      #Vendor="cisco" #event.module="meraki" #event.dataset="meraki.events"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | (event.action="wifi-8021x-auth" OR event.action="wifi-8021x-failed-authentication-attempt" OR event.action="wifi-8021x-failed-auth-or-deauth")
+      | Vendor.identity=?username
+      | !Vendor.identity=?exclude_username
+      | case {
+          event.action="wifi-8021x-auth" | Outcome := "success" ;
+          event.action=/wifi-8021x-failed/ | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | Vendor.last_known_client_ip=~wildcard(?source_ip, includeEverythingOnAsterisk=true)
+      | Vendor.last_known_client_ip!=?exclude_source_ip
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, Vendor.identity, Vendor.last_known_client_ip, log.syslog.hostname, Vendor.client_mac, event.action, Outcome], limit=10000)
+      | rename([[TimeStr, Time], [Vendor.identity, User], [Vendor.last_known_client_ip, "Source IP"], [log.syslog.hostname, "Access Point"], [Vendor.client_mac, "Device MAC"], [event.action, Action]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 6
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Meraki 802.1X WiFi Authentication
+    isLive: false
+    type: query
+  a1b2c3d4-0016-4000-8000-000000000016:
+    x: 0
+    y: 24
+    height: 6
+    queryString: |
+      #Vendor="vmware" #event.module="vcenter" #event.dataset="vcenter.vpxd"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | message=*UserLoginSessionEvent*
+      | !user.name=*@127.0.0.1*
+      | user.name=?username
+      | !user.name=?exclude_username
+      | Outcome := "success"
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, user.name, message], limit=10000)
+      | rename([[TimeStr, Time], [user.name, "User (user@IP)"], [message, Event]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 12
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: VMware vCenter Admin Sessions
+    isLive: false
+    type: query
+  a1b2c3d4-0003-4000-8000-000000000003:
+    x: 4
+    y: 6
+    height: 5
+    queryString: |
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      #repo!=xdr*
+      // Source Inventory & Filtering
+        //Entra ID
+      | (#Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin" 
+            user.name=?username !user.name=?exclude_username)
+        //Defender for Identity
+        OR (#Vendor="microsoft" #event.module="defender-identity" #event.dataset="defender-identity.IdentityLogonEvents" 
+            Vendor.properties.AccountUpn=?username !Vendor.properties.AccountUpn=?exclude_username)
+        //ZScaler ZPA
+        OR (#Vendor="zscaler" #event.module="zpa" #event.dataset="zpa.user-status" 
+            user.name=?username !user.name=?exclude_username user.name!="ZPA IP Anchor")
+        //SalesForce
+        OR (#Vendor="salesforce" #event.module="salesforce" #event.dataset="salesforce.auth" 
+            user.name=?username !user.name=?exclude_username)
+        //CyberArk Vault
+        OR (#Vendor="cyberark" #event.module="vault" 
+            source.user.name=?username !source.user.name=?exclude_username)
+        //Palo Alto NGFW
+        OR (#Vendor="paloalto" #event.module="ngfw" #event.dataset="ngfw.system" 
+            (event.action="auth-success" OR event.action="auth-fail") 
+            user.name=?username !user.name=?exclude_username)
+        //VMware ESXi
+        OR (#Vendor="vmware" #event.module="esxi" #event.dataset="esxi.vobd" event.action=*ssh.session* 
+            user.name=?username !user.name=?exclude_username)
+        //Cisco Meraki
+        OR (#Vendor="cisco" #event.module="meraki" #event.dataset="meraki.events" 
+            (event.action="wifi-8021x-auth" OR event.action="wifi-8021x-failed-authentication-attempt" OR event.action="wifi-8021x-failed-auth-or-deauth") 
+            Vendor.identity=?username !Vendor.identity=?exclude_username)
+        //WinEventLog
+        OR (#Vendor="microsoft" #event.module="windows" #event.dataset="windows.security" 
+            (event.reason="An account was successfully logged on" OR event.reason="An account failed to log on") 
+            (Vendor.Event.EventData.LogonType="2" OR Vendor.Event.EventData.LogonType="7" OR Vendor.Event.EventData.LogonType="9" OR Vendor.Event.EventData.LogonType="10" OR Vendor.Event.EventData.LogonType="11") 
+            Vendor.Event.EventData.TargetUserName!="-" Vendor.Event.EventData.TargetDomainName!="Window Manager" Vendor.Event.EventData.TargetDomainName!="Font Driver Host" Vendor.Event.EventData.TargetDomainName!="NT AUTHORITY" 
+            Vendor.Event.EventData.TargetUserName=?username !Vendor.Event.EventData.TargetUserName=?exclude_username)
+        //VMware vCenter
+        OR (#Vendor="vmware" #event.module="vcenter" #event.dataset="vcenter.vpxd" 
+            message=*UserLoginSessionEvent* !user.name=*@127.0.0.1* 
+            user.name=?username !user.name=?exclude_username)
+        //F5 Big IP
+        OR (#Vendor="f5networks" #event.module="bigip" 
+            (log.syslog.facility.code=10 OR log.syslog.facility.code=4) 
+            (log.syslog.appname=httpd OR log.syslog.appname="httpd(pam_audit)" OR log.syslog.appname=sshd OR log.syslog.appname="sshd(pam_audit)" OR log.syslog.appname=nslcd OR log.syslog.appname=unix_chkpwd) 
+            Vendor.message=/user|auth|AUDIT|session opened|session closed|password/i)
+        //Mimecast SSO (via Falcon Sensor)
+        OR (#repo=base_sensor #event.dataset=falcon.cloud (event.action=SsoApplicationAccess OR event.action=SsoApplicationAccessFailure) source.user.name=?username !source.user.name=?exclude_username)
+      //F5 Big IP username extraction & normalization
+      | case {
+          #Vendor=f5networks
+            | case {
+                Vendor.message=/AUDIT - user (?<_user>\S+)/ ;
+                Vendor.message=/user=(?<_user>[^\s(]+)\(/ ;
+                Vendor.message=/[Aa]uth.*failure.*user=(?<_user>\S+)/ ;
+                Vendor.message=/[Aa]uth.*failure for (?<_user>\S+) from/ ;
+                Vendor.message=/authc="(?<_user>[^"]+)"/ ;
+                Vendor.message=/password check failed for user \((?<_user>[^)]+)\)/ ;
+                Vendor.message=/session (?:opened|closed) for user (?<_user>\S+)/ ;
+                Vendor.message=/user unknown/ | _user := "(unknown)" ;
+                * | _user := "(unparsed)" ;
+              }
+            | _user != "(unparsed)"
+            | _user=~wildcard(?username, includeEverythingOnAsterisk=true)
+            | _user!=?exclude_username;
+          * | *
+        }  
+      //Entra ID App filter
+      | case {
+          #event.dataset="entraid.signin" | _app := Vendor.properties.appDisplayName ;
+          #event.dataset="defender-identity.IdentityLogonEvents" | _app := Vendor.properties.Application ;
+          * | _app := "*" ;
+        }
+      | _app=?app_name | !_app=?exclude_app_name
+
+      //Source Labels
+      | Source := #event.dataset
+      | replace("entraid.signin", with="Entra ID", field=Source)
+      | replace("defender-identity.IdentityLogonEvents", with="Defender Identity", field=Source)
+      | replace("zpa.user-status", with="Zscaler ZPA", field=Source)
+      | replace("salesforce.auth", with="Salesforce", field=Source)
+      | replace("vault.audit", with="CyberArk", field=Source)
+      | replace("ngfw.system", with="Palo Alto", field=Source)
+      | replace("esxi.vobd", with="VMware ESXi", field=Source)
+      | replace("meraki.events", with="Meraki 802.1X", field=Source)
+      | replace("windows.security", with="Windows AD", field=Source)
+      | replace("vcenter.vpxd", with="VMware vCenter", field=Source)
+      | replace("bigip.os", with="F5 BIG-IP", field=Source)
+      | replace("bigip.system", with="F5 BIG-IP", field=Source)
+      | replace("falcon.cloud", with="Mimecast SSO", field=Source)
+
+      //Outcome Normalization
+      | case {
+          //Standardized (ECS)
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          //ZScaler ZPA
+          Vendor.SessionStatus="ZPN_STATUS_AUTHENTICATED" | Outcome := "success" ;
+          Vendor.SessionStatus="ZPN_STATUS_AUTH_FAILED" | Outcome := "failure" ;
+          Vendor.SessionStatus="ZPN_STATUS_DISCONNECTED" | Outcome := "disconnected" ;
+          //Salesforce
+          Vendor.LOGIN_STATUS="LOGIN_NO_ERROR" | Outcome := "success" ;
+          Vendor.LOGIN_STATUS=* | Outcome := "failure" ;
+          //Cisco Meraki
+          event.action="wifi-8021x-auth" | Outcome := "success" ;
+          event.action=/wifi-8021x-failed/ | Outcome := "failure" ;
+          //VMware vCenter
+          message=*UserLoginSessionEvent* | Outcome := "success" ;
+          //F5 Big IP
+          Vendor.message=/AUDIT|session opened|SUCCESS|user=\S+\(\S+\) partition=.*start=/ | Outcome := "success" ;
+          Vendor.message=/failure|failed|Invalid credentials|user unknown/i | Outcome := "failure" ;
+          //Mimecast SSO (via Falcon Sensor)
+          event.action="SsoApplicationAccess" | Outcome := "success" ;
+          event.action="SsoApplicationAccessFailure" | Outcome := "failure" ;
+          //Catch-all
+          * | Outcome := "unknown" ;
+        }
+      //Exclude unknown outcomes
+      | Outcome != "unknown"
+      //Outcome parameter filtering
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | groupBy([Source, Outcome], function=count(), limit=max)
+    visualization: bar-chart
+    end: now
+    start: 7d
+    width: 4
+    title: Success/Failure by Source
+    isLive: false
+    type: query
+  a1b2c3d4-0007-4000-8000-000000000007:
+    x: 0
+    y: 6
+    height: 6
+    queryString: |
+      #Vendor="salesforce" #event.module="salesforce" #event.dataset="salesforce.auth"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username
+      | Vendor.FORWARDED_FOR_IP=~wildcard(?source_ip, includeEverythingOnAsterisk=true)
+      | Vendor.FORWARDED_FOR_IP!=?exclude_source_ip
+      | case {
+          Vendor.LOGIN_STATUS="LOGIN_NO_ERROR" | Outcome := "success" ;
+          Vendor.LOGIN_STATUS=* | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, user.name, Vendor.FORWARDED_FOR_IP, Outcome, Vendor.LOGIN_STATUS, Vendor.URI], limit=10000)
+      | rename([[TimeStr, Time], [user.name, User], [Vendor.FORWARDED_FOR_IP, "Source IP"], [Outcome, Result], [Vendor.LOGIN_STATUS, "Login Status"], [Vendor.URI, Application]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 8
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Salesforce Logins
+    isLive: false
+    type: query
+  a1b2c3d4-0004g-entra-compliance:
+    x: 8
+    y: 4
+    height: 4
+    queryString: |
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username
+      | Vendor.properties.appDisplayName=?app_name
+      | !Vendor.properties.appDisplayName=?exclude_app_name
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | case {
+          Vendor.properties.deviceDetail.isCompliant="true"  | Compliance := "Compliant" ;
+          Vendor.properties.deviceDetail.isCompliant="false" | Compliance := "Non-Compliant" ;
+          * | Compliance := "Unknown" ;
+        }
+      | groupBy(Compliance, function=count(), limit=max)
+    visualization: pie-chart
+    end: now
+    start: 7d
+    width: 4
+    title: 'Entra: Device Compliance'
+    isLive: false
+    type: query
+  a1b2c3d4-0004f-entra-top-apps:
+    x: 4
+    y: 4
+    height: 4
+    queryString: |
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username
+      | Vendor.properties.appDisplayName=?app_name
+      | !Vendor.properties.appDisplayName=?exclude_app_name
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | Vendor.properties.appDisplayName != ""
+      | top(Vendor.properties.appDisplayName, limit=15)
+      | rename([[Vendor.properties.appDisplayName, "Application"], [_count, "Sign-ins"]])
+    end: now
+    start: 7d
+    width: 4
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: 'Entra: Top Apps'
+    isLive: false
+    type: query
+  a1b2c3d4-0018-4000-8000-mimecast00001:
+    x: 6
+    y: 30
+    height: 6
+    queryString: |
+      #repo=base_sensor #event.dataset=falcon.cloud (event.action=SsoApplicationAccess OR event.action=SsoApplicationAccessFailure)
+      | source.user.name=?username
+      | !source.user.name=?exclude_username
+      | case {
+          event.action="SsoApplicationAccess" | Outcome := "success" ;
+          event.action="SsoApplicationAccessFailure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome != "unknown"
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | source.ip=~wildcard(?source_ip, includeEverythingOnAsterisk=true)
+      | source.ip!=?exclude_source_ip
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | case {
+          LocationStateCode=~regex("^[0-9]+$") | State := "-" ;
+          LocationStateCode="" | State := "-" ;
+          * | State := LocationStateCode ;
+        }
+      | table([TimeStr, source.user.name, Outcome, source.ip, SourceEndpointHostName, LocationCountryCode, State], limit=10000)
+      | rename([[TimeStr, Time], [source.user.name, User], [Outcome, Result], [source.ip, "Source IP"], [SourceEndpointHostName, Device], [LocationCountryCode, Country]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 6
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Mimecast SSO Logins
+    isLive: false
+    type: query
+  a1b2c3d4-0015-4000-8000-000000000015:
+    x: 6
+    y: 18
+    height: 6
+    queryString: |
+      #Vendor="microsoft" #event.module="windows" #event.dataset="windows.security"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | (event.reason="An account was successfully logged on" OR event.reason="An account failed to log on")
+      | (Vendor.Event.EventData.LogonType="2" OR Vendor.Event.EventData.LogonType="7" OR Vendor.Event.EventData.LogonType="9" OR Vendor.Event.EventData.LogonType="10" OR Vendor.Event.EventData.LogonType="11")
+      | Vendor.Event.EventData.TargetUserName != "-"
+      | Vendor.Event.EventData.TargetDomainName != "Window Manager"
+      | Vendor.Event.EventData.TargetDomainName != "Font Driver Host"
+      | Vendor.Event.EventData.TargetDomainName != "NT AUTHORITY"
+      | Vendor.Event.EventData.TargetUserName=?username
+      | !Vendor.Event.EventData.TargetUserName=?exclude_username
+      | source.ip=~wildcard(?source_ip, includeEverythingOnAsterisk=true)
+      | source.ip!=?exclude_source_ip
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, Vendor.Event.EventData.TargetUserName, Vendor.Event.EventData.TargetDomainName, source.ip, host.name, Vendor.Event.EventData.LogonType, Outcome], limit=10000)
+      | rename([[TimeStr, Time], [Vendor.Event.EventData.TargetUserName, "User (sAMAccountName)"], [Vendor.Event.EventData.TargetDomainName, Domain], [source.ip, "Source IP"], [host.name, Host], [Vendor.Event.EventData.LogonType, "Logon Type"], [Outcome, Result]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 6
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Windows AD Interactive Logons (RDP / Console)
+    isLive: false
+    type: query
+  note-dashboard-header:
+    x: 0
+    backgroundColor: '#14274E'
+    y: 0
+    height: 3
+    text: |
+      Displays authentication events across all ingested identity and access sources. Use the **Username** parameter to filter by a specific user — leave as `*` to see all activity.
+
+      **Sources covered:** Entra ID · Defender Identity · Zscaler ZPA · Salesforce · CyberArk · Palo Alto NGFW · VMware ESXi · Meraki 802.1X · Windows AD · VMware vCenter · F5 BIG-IP · Mimecast SSO (via Falcon Sensor) · CrowdStrike Falcon Next-Gen Identity Security Alerts
+
+      **Outcome filter:** Use `success`, `failure`, or `disconnected` (ZPA only). Works across all sources. 
+      
+      Last updated: 2026-04-08
+    width: 12
+    title: User Sign-in Activities Dashboard
+    type: note
+  a1b2c3d4-0017-4000-8000-f5bigip00001:
+    x: 0
+    y: 30
+    height: 6
+    queryString: |
+      #Vendor="f5networks" #event.module="bigip"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | (log.syslog.facility.code=10 OR log.syslog.facility.code=4) (log.syslog.appname=httpd OR log.syslog.appname="httpd(pam_audit)" OR log.syslog.appname=sshd OR log.syslog.appname="sshd(pam_audit)" OR log.syslog.appname=nslcd OR log.syslog.appname=unix_chkpwd) Vendor.message=/user|auth|AUDIT|session opened|session closed|password/i
+      | case {
+          Vendor.message=/AUDIT - user (?<_user>\S+)/ ;
+          Vendor.message=/user=(?<_user>[^\s(]+)\(/ ;
+          Vendor.message=/[Aa]uth.*failure.*user=(?<_user>\S+)/ ;
+          Vendor.message=/[Aa]uth.*failure for (?<_user>\S+) from/ ;
+          Vendor.message=/authc="(?<_user>[^"]+)"/ ;
+          Vendor.message=/password check failed for user \((?<_user>[^)]+)\)/ ;
+          Vendor.message=/session (?:opened|closed) for user (?<_user>\S+)/ ;
+          Vendor.message=/user unknown/ | _user := "(unknown)" ;
+          * | _user := "(unparsed)" ;
+        }
+      | _user != "(unparsed)"
+      | _user=?username
+      | !_user=?exclude_username
+      | case {
+          Vendor.message=/host=(?<_source_ip>[\d.]+)/ ;
+          Vendor.message=/rhost=(?<_source_ip>[\d.]+)/ ;
+          Vendor.message=/from (?<_source_ip>[\d.]+)/ ;
+          * | _source_ip := "" ;
+        }
+      | _source_ip=~wildcard(?source_ip, includeEverythingOnAsterisk=true)
+      | _source_ip!=?exclude_source_ip
+      | case {
+          Vendor.message=/level=(?<_level>\S+)/ ;
+          * | _level := "" ;
+        }
+      | case {
+          Vendor.message=/AUDIT/ | Outcome := "success" ;
+          Vendor.message=/session opened/ | Outcome := "success" ;
+          Vendor.message=/SUCCESS/ | Outcome := "success" ;
+          Vendor.message=/user=\S+\(\S+\) partition=.*start=/ | Outcome := "success" ;
+          Vendor.message=/failure|failed|Invalid credentials|user unknown/i | Outcome := "failure" ;
+          Vendor.message=/session closed/ | Outcome := "info" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome != "unknown" AND Outcome != "info"
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | case {
+          log.syslog.appname=/httpd/ | Method := "Web UI" ;
+          log.syslog.appname=/sshd/ | Method := "SSH" ;
+          log.syslog.appname=nslcd | Method := "LDAP" ;
+          log.syslog.appname=unix_chkpwd | Method := "Local" ;
+          * | Method := log.syslog.appname ;
+        }
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, _user, Outcome, Method, _source_ip, log.syslog.hostname, _level, Vendor.message], limit=10000)
+      | rename([[TimeStr, Time], [_user, User], [Outcome, Result], [_source_ip, "Source IP"], [log.syslog.hostname, Appliance], [_level, "Access Level"], [Vendor.message, Message]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 6
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: F5 BIG-IP Authentication
+    isLive: false
+    type: query
+  a1b2c3d4-0006-4000-8000-000000000006:
+    x: 6
+    y: 0
+    height: 6
+    queryString: |
+      #Vendor="zscaler" #event.module="zpa" #event.dataset="zpa.user-status"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username user.name!="ZPA IP Anchor"
+      | client.ip=?source_ip
+      | !client.ip=?exclude_source_ip
+      | case {
+          Vendor.SessionStatus="ZPN_STATUS_AUTHENTICATED" | Outcome := "success" ;
+          Vendor.SessionStatus="ZPN_STATUS_AUTH_FAILED" | Outcome := "failure" ;
+          Vendor.SessionStatus="ZPN_STATUS_DISCONNECTED" | Outcome := "disconnected" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, user.name, client.ip, source.geo.city_name, source.geo.country_iso_code, Outcome, event.start], limit=10000)
+      | rename([[TimeStr, Time], [user.name, User], [client.ip, "Source IP"], [source.geo.city_name, City], [source.geo.country_iso_code, Country], [Outcome, Result], [event.start, "Auth Time"]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 6
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Zscaler ZPA Sessions
+    isLive: false
+    type: query
+  a1b2c3d4-0010-4000-8000-000000000010:
+    x: 8
+    y: 6
+    height: 6
+    queryString: |
+      #Vendor="cyberark" #event.module="vault"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | source.user.name=?username
+      | !source.user.name=?exclude_username
+      | source.ip=?source_ip
+      | !source.ip=?exclude_source_ip
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, source.user.name, source.ip, source.domain, event.action, Outcome], limit=10000)
+      | rename([[TimeStr, Time], [source.user.name, User], [source.ip, "Source IP"], [source.domain, "Source Host"], [event.action, Action], [Outcome, Result]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 4
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: CyberArk Vault Access
+    isLive: false
+    type: query
+  a1b2c3d4-0004e1-entra-risk-high:
+    x: 0
+    y: 4
+    height: 4
+    queryString: |
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username
+      | Vendor.properties.appDisplayName=?app_name
+      | !Vendor.properties.appDisplayName=?exclude_app_name
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | Vendor.properties.riskLevelAggregated = "high"
+      | count()
+    end: now
+    start: 7d
+    width: 2
+    options:
+      default: {}
+      text-color: '#C93637'
+    visualization: single-value
+    title: 'Entra: High Risk Sign-ins'
+    isLive: false
+    type: query
+  a1b2c3d4-0013-4000-8000-000000000013:
+    x: 6
+    y: 12
+    height: 6
+    queryString: |
+      #Vendor="vmware" #event.module="esxi" #event.dataset="esxi.vobd"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | event.action=*ssh.session*
+      | user.name=?username
+      | !user.name=?exclude_username
+      | source.ip=?source_ip
+      | !source.ip=?exclude_source_ip
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | case {
+          event.action=*opened* | Action := "Session Opened" ;
+          event.action=*closed* | Action := "Session Closed" ;
+          event.action=*failed* | Action := "Login Failed" ;
+          * | Action := event.action ;
+        }
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, user.name, source.ip, host.name, Action, Outcome], limit=10000)
+      | rename([[TimeStr, Time], [user.name, User], [source.ip, "Source IP"], [host.name, "ESXi Host"], [Outcome, Result]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 6
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: VMware ESXi SSH Sessions
+    isLive: false
+    type: query
+  a1b2c3d4-0009-4000-8000-000000000009:
+    x: 8
+    y: 6
+    height: 5
+    queryString: |
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      #repo!=xdr*
+      // Source Inventory & Filtering
+      | (#Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin" user.name=?username !user.name=?exclude_username)
+        OR (#Vendor="microsoft" #event.module="defender-identity" #event.dataset="defender-identity.IdentityLogonEvents" Vendor.properties.AccountUpn=?username !Vendor.properties.AccountUpn=?exclude_username)
+        OR (#Vendor="zscaler" #event.module="zpa" #event.dataset="zpa.user-status" user.name=?username !user.name=?exclude_username user.name!="ZPA IP Anchor")
+        OR (#Vendor="salesforce" #event.module="salesforce" #event.dataset="salesforce.auth" user.name=?username !user.name=?exclude_username)
+      | case {
+          #event.dataset="entraid.signin" | _app := Vendor.properties.appDisplayName ;
+          #event.dataset="defender-identity.IdentityLogonEvents" | _app := Vendor.properties.Application ;
+          * | _app := "*" ;
+        }
+      | _app=?app_name | !_app=?exclude_app_name
+      | source.geo.country_iso_code != ""
+      | groupBy(source.geo.country_iso_code, function=count(), limit=max)
+      | rename(source.geo.country_iso_code, as="Country")
+      | sort(_count, order=desc, limit=20)
+    visualization: pie-chart
+    end: now
+    start: 7d
+    width: 4
+    title: Sign-in Origins by Country
+    isLive: false
+    type: query
+  a1b2c3d4-0004c-entra-mfa-method:
+    x: 4
+    y: 0
+    height: 4
+    queryString: |
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username
+      | Vendor.properties.appDisplayName=?app_name
+      | !Vendor.properties.appDisplayName=?exclude_app_name
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | Vendor.properties.mfaDetail.authMethod != ""
+      | groupBy(Vendor.properties.mfaDetail.authMethod, function=count(), limit=max)
+    visualization: pie-chart
+    end: now
+    start: 7d
+    width: 4
+    title: 'Entra: MFA Method'
+    isLive: false
+    type: query
+  a1b2c3d4-0001-4000-8000-000000000001:
+    x: 0
+    y: 0
+    height: 6
+    queryString: |
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      #repo!=xdr*
+      // Source Inventory & Filtering
+      | (#Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin" user.name=?username !user.name=?exclude_username)
+        OR (#Vendor="microsoft" #event.module="defender-identity" #event.dataset="defender-identity.IdentityLogonEvents" Vendor.properties.AccountUpn=?username !Vendor.properties.AccountUpn=?exclude_username)
+        OR (#Vendor="zscaler" #event.module="zpa" #event.dataset="zpa.user-status" user.name=?username !user.name=?exclude_username user.name!="ZPA IP Anchor")
+        OR (#Vendor="salesforce" #event.module="salesforce" #event.dataset="salesforce.auth" user.name=?username !user.name=?exclude_username)
+      | case {
+          #event.dataset="entraid.signin" | _app := Vendor.properties.appDisplayName ;
+          #event.dataset="defender-identity.IdentityLogonEvents" | _app := Vendor.properties.Application ;
+          * | _app := "*" ;
+        }
+      | _app=?app_name | !_app=?exclude_app_name
+      | Source := #event.dataset
+      | replace("entraid.signin", with="Entra ID", field=Source)
+      | replace("defender-identity.IdentityLogonEvents", with="Defender Identity", field=Source)
+      | replace("zpa.user-status", with="Zscaler ZPA", field=Source)
+      | replace("salesforce.auth", with="Salesforce", field=Source)
+      | timeChart(span=auto, function=count(), series=Source)
+    end: now
+    start: 7d
+    width: 12
+    options:
+      connect-points: false
+      imputation: none
+    visualization: time-chart
+    title: Sign-in Timeline (all sources)
+    isLive: false
+    type: query
+  a1b2c3d4-0005-4000-8000-000000000005:
+    x: 0
+    y: 0
+    height: 6
+    queryString: |
+      #Vendor="microsoft" #event.module="defender-identity" #event.dataset="defender-identity.IdentityLogonEvents"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | Vendor.properties.AccountUpn=?username !Vendor.properties.AccountUpn=?exclude_username
+      | Vendor.properties.Application=?app_name
+      | !Vendor.properties.Application=?exclude_app_name
+      | source.address=?source_ip
+      | !source.address=?exclude_source_ip
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, Vendor.properties.AccountUpn, source.address, Vendor.properties.Application, Vendor.properties.LogonType, Outcome, event.action], limit=10000)
+      | rename([[TimeStr, Time], [Vendor.properties.AccountUpn, User], [source.address, "Source IP"], [Vendor.properties.Application, Application], [Vendor.properties.LogonType, "Logon Type"], [Outcome, Result], [event.action, Action]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 6
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Defender Identity Logons
+    isLive: false
+    type: query
+  a1b2c3d4-0002-4000-8000-000000000002:
+    x: 0
+    y: 6
+    height: 5
+    queryString: |
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      #repo!=xdr*
+      // Source Inventory & Filtering
+      | (#Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin" user.name=?username !user.name=?exclude_username)
+        OR (#Vendor="microsoft" #event.module="defender-identity" #event.dataset="defender-identity.IdentityLogonEvents" Vendor.properties.AccountUpn=?username !Vendor.properties.AccountUpn=?exclude_username)
+        OR (#Vendor="zscaler" #event.module="zpa" #event.dataset="zpa.user-status" user.name=?username !user.name=?exclude_username user.name!="ZPA IP Anchor")
+        OR (#Vendor="salesforce" #event.module="salesforce" #event.dataset="salesforce.auth" user.name=?username !user.name=?exclude_username)
+      | case {
+          #event.dataset="entraid.signin" | _app := Vendor.properties.appDisplayName ;
+          #event.dataset="defender-identity.IdentityLogonEvents" | _app := Vendor.properties.Application ;
+          * | _app := "*" ;
+        }
+      | _app=?app_name | !_app=?exclude_app_name
+      | case {
+          #event.dataset="entraid.signin" | IP := source.ip ;
+          #event.dataset="defender-identity.IdentityLogonEvents" | IP := source.address ;
+          #event.dataset="zpa.user-status" | IP := client.ip ;
+          #event.dataset="salesforce.auth" | IP := Vendor.FORWARDED_FOR_IP ;
+          * | IP := "unknown" ;
+        }
+      | IP != "" | IP != "unknown"
+      | IP=?source_ip
+      | !IP=?exclude_source_ip
+      | groupBy(IP, function=count(), limit=max)
+      | sort(_count, order=desc, limit=20)
+    visualization: bar-chart
+    end: now
+    start: 7d
+    width: 4
+    title: Source IP Summary (top 20)
+    isLive: false
+    type: query
+  a1b2c3d4-0004d-entra-os:
+    x: 8
+    y: 0
+    height: 4
+    queryString: |
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username
+      | Vendor.properties.appDisplayName=?app_name
+      | !Vendor.properties.appDisplayName=?exclude_app_name
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | Vendor.properties.deviceDetail.operatingSystem != ""
+      | case {
+          Vendor.properties.deviceDetail.operatingSystem=/^iOS/i          | OS := "iOS" ;
+          Vendor.properties.deviceDetail.operatingSystem=/^Windows/i      | OS := "Windows" ;
+          Vendor.properties.deviceDetail.operatingSystem=/^MacOS|^macOS/i | OS := "macOS" ;
+          Vendor.properties.deviceDetail.operatingSystem=/^Android/i      | OS := "Android" ;
+          Vendor.properties.deviceDetail.operatingSystem=/^Linux/i        | OS := "Linux" ;
+          * | OS := Vendor.properties.deviceDetail.operatingSystem ;
+        }
+      | groupBy(OS, function=count(), limit=max)
+    visualization: pie-chart
+    end: now
+    start: 7d
+    width: 4
+    title: 'Entra: Sign-in OS'
+    isLive: false
+    type: query
+  a1b2c3d4-0011-4000-8000-000000000011:
+    x: 0
+    y: 36
+    height: 5
+    queryString: |
+      #Vendor="crowdstrike" #event.module="identity-protection"
+      | source.user.name=?username
+      | !source.user.name=?exclude_username
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, source.user.name, event.action, Vendor.FalconHostLink], limit=10000)
+      | rename([[TimeStr, Time], [source.user.name, User], [event.action, "Indicator Type"], [Vendor.FalconHostLink, "Detection Link"]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 12
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: CrowdStrike Falcon Next-Gen Identity Security Alerts
+    isLive: false
+    type: query
+  a1b2c3d4-0004-4000-8000-000000000004:
+    x: 0
+    y: 8
+    height: 6
+    queryString: |
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username
+      | Vendor.properties.appDisplayName=?app_name
+      | !Vendor.properties.appDisplayName=?exclude_app_name
+      | source.ip=?source_ip
+      | !source.ip=?exclude_source_ip
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | TimeStr := formatTime(format="%Y-%m-%d %H:%M:%S", field=@timestamp)
+      | table([TimeStr, user.name, source.ip, source.geo.city_name, source.geo.region_name, source.geo.country_name, Vendor.properties.appDisplayName, Vendor.properties.clientAppUsed, Outcome, Vendor.properties.deviceDetail.displayName], limit=10000)
+      | rename([[TimeStr, Time], [user.name, User], [source.ip, "Source IP"], [source.geo.city_name, City], [source.geo.region_name, Region], [source.geo.country_name, Country], [Vendor.properties.appDisplayName, Application], [Vendor.properties.clientAppUsed, Client], [Outcome, Result], [Vendor.properties.deviceDetail.displayName, Device]])
+      | sort(Time, order=desc, limit=10000)
+    end: now
+    start: 7d
+    width: 12
+    options:
+      cell-overflow: wrap-text
+      column-overflow: truncate
+      configured-columns: {}
+      row-numbers-enabled: false
+    visualization: table-view
+    title: Entra ID Sign-ins
+    isLive: false
+    type: query
+  a1b2c3d4-0004b-entra-client-app:
+    x: 0
+    y: 0
+    height: 4
+    queryString: |
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username !user.name=?exclude_username
+      | Vendor.properties.appDisplayName=?app_name
+      | !Vendor.properties.appDisplayName=?exclude_app_name
+      | case {
+          #event.outcome="success" | Outcome := "success" ;
+          #event.outcome="failure" | Outcome := "failure" ;
+          * | Outcome := "unknown" ;
+        }
+      | Outcome=?outcome
+      | !Outcome=?exclude_outcome
+      | Vendor.properties.clientAppUsed != ""
+      | groupBy(Vendor.properties.clientAppUsed, function=count(), limit=max)
+    visualization: pie-chart
+    end: now
+    start: 7d
+    width: 4
+    title: 'Entra: Client App Used'
+    isLive: false
+    type: query
+$schema: https://schemas.humio.com/dashboard/v0.23.0
+parameters:
+  username:
+    label: Username (UPN/email)
+    order: 0
+    type: text
+    defaultValue: '*'
+    width: 1
+  exclude_username:
+    label: Exclude Username
+    order: 4
+    type: text
+    defaultValue: ^*
+    width: 1
+  exclude_source_ip:
+    label: Exclude Source IP
+    order: 6
+    type: text
+    defaultValue: ^*
+    width: 1
+  outcome:
+    label: Outcome (success / failure / disconnected / *)
+    order: 1
+    type: text
+    defaultValue: '*'
+    width: 1
+  exclude_outcome:
+    label: Exclude Outcome
+    order: 5
+    type: text
+    defaultValue: ^*
+    width: 1
+  app_name:
+    label: Entra SSO Apps
+    query: |-
+      #Vendor="microsoft" #event.module="entraid" #event.dataset="entraid.signin"
+      //Exlcude "lifted" (duplicate) 3rd party events in xdr telemetry repos
+      | #repo!=xdr*
+      | user.name=?username
+      | Vendor.properties.appDisplayName != ""
+      | groupBy(Vendor.properties.appDisplayName, limit=max)
+      | sort(Vendor.properties.appDisplayName, order=asc, limit=500)
+    timeInterval: 7d
+    useDashboardTimeIfSet: false
+    type: query
+    defaultValue: '*'
+    width: 1
+    order: 3
+    valueField: Vendor.properties.appDisplayName
+  source_ip:
+    label: Source IP
+    order: 2
+    type: text
+    defaultValue: '*'
+    width: 1
+  exclude_app_name:
+    label: Exclude App Name
+    order: 7
+    type: text
+    defaultValue: ^*
+    width: 1

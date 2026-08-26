@@ -1,0 +1,379 @@
+{
+  "version": "2024.08",
+  "source": "CrowdStrike Prevention Policy Best Practices - Optimal Protection (Phase 3)",
+  "platforms": {
+    "Windows": {
+      "sensor_capabilities": {
+        "unknown_executable_analysis": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Upload unknown executables for analysis to improve ML models"
+        },
+        "sensor_tamper_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Blocks attempts to tamper with the sensor"
+        }
+      },
+      "sensor_visibility": {
+        "additional_user_mode_data": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Required for exploit mitigation and credential theft detection"
+        },
+        "script_based_execution": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Monitor PowerShell and scripting languages for malicious activity"
+        },
+        "interpreter_only_visibility": {
+          "recommendation": "Enabled",
+          "severity": "MEDIUM",
+          "description": "PowerShell engine introspection"
+        },
+        "enhanced_exploitation_visibility": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Enriched visibility into exploitation techniques"
+        },
+        "extended_user_mode_data": {
+          "recommendation": "Moderate",
+          "severity": "MEDIUM",
+          "description": "Flexible user-mode API monitoring"
+        }
+      },
+      "cloud_machine_learning": {
+        "cloud_anti_malware_detection": {
+          "recommendation": "Aggressive",
+          "severity": "HIGH",
+          "description": "Detect known malware with low confidence threshold"
+        },
+        "cloud_anti_malware_prevention": {
+          "recommendation": "Moderate+",
+          "severity": "HIGH",
+          "description": "Block known malware with moderate confidence"
+        },
+        "cloud_adware_detection": {
+          "recommendation": "Aggressive",
+          "severity": "MEDIUM",
+          "description": "Detect adware and PUPs aggressively"
+        },
+        "cloud_adware_prevention": {
+          "recommendation": "Moderate+",
+          "severity": "MEDIUM",
+          "description": "Block adware and PUPs with moderate confidence"
+        }
+      },
+      "sensor_machine_learning": {
+        "sensor_anti_malware_detection": {
+          "recommendation": "Aggressive",
+          "severity": "HIGH",
+          "description": "On-sensor malware detection at low confidence"
+        },
+        "sensor_anti_malware_prevention": {
+          "recommendation": "Moderate+",
+          "severity": "HIGH",
+          "description": "On-sensor malware blocking at moderate confidence"
+        }
+      },
+      "on_write": {
+        "detect_on_write": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Detect malicious files when written to disk"
+        },
+        "quarantine_on_write": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Quarantine malicious files immediately"
+        },
+        "detect_non_executables": {
+          "recommendation": "Enabled",
+          "severity": "MEDIUM",
+          "description": "Detect suspicious non-executable files"
+        },
+        "quarantine_non_executables": {
+          "recommendation": "Enabled",
+          "severity": "MEDIUM",
+          "description": "Quarantine suspicious packages"
+        }
+      },
+      "quarantine": {
+        "quarantine_enabled": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Enable quarantine functionality"
+        },
+        "security_center_registration": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Register Falcon as AV with Windows Security Center"
+        }
+      },
+      "execution_blocking": {
+        "custom_indicator_blocking": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block custom IOCs by hash"
+        },
+        "suspicious_process_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Block processes with suspicious behavior"
+        },
+        "suspicious_script_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Block malicious PowerShell and scripts"
+        },
+        "suspicious_registry_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block suspicious registry operations"
+        },
+        "intelligence_threat_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block intelligence-sourced threats"
+        },
+        "driver_load_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Block malicious kernel drivers"
+        },
+        "vulnerable_driver_protection": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block vulnerable drivers (BYOVD protection)"
+        }
+      },
+      "exploit_mitigation": {
+        "aslr_bypass_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Prevent ASLR bypass attempts"
+        },
+        "dep_bypass_prevention": {
+          "recommendation": "Disabled",
+          "severity": "LOW",
+          "description": "DEP bypass - not recommended due to false positives"
+        },
+        "heap_spray_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block heap spray pre-allocation"
+        },
+        "null_page_prevention": {
+          "recommendation": "Enabled",
+          "severity": "MEDIUM",
+          "description": "Prevent NULL page allocation exploitation"
+        },
+        "seh_overwrite_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Prevent SEH overwrite attacks"
+        }
+      },
+      "ransomware": {
+        "backup_deletion_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Block deletion of volume shadow copies"
+        },
+        "file_encryption_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Block ransomware file encryption"
+        },
+        "file_system_access_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Block high-volume file system operations"
+        },
+        "volume_shadow_copy_audit": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Audit shadow copy manipulations"
+        },
+        "volume_shadow_copy_protect": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Protect shadow copies from deletion"
+        }
+      },
+      "exploitation_behavior": {
+        "application_exploitation_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block post-exploitation process creation"
+        },
+        "code_injection_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block PowerShell injection"
+        },
+        "drive_by_download_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block browser-based malware downloads"
+        }
+      },
+      "lateral_movement": {
+        "credential_dumping_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Prevent credential theft (Mimikatz, etc.)"
+        },
+        "windows_logon_bypass_prevention": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block sticky keys attacks"
+        }
+      },
+      "remediation": {
+        "advanced_remediation": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Auto-remediate IOA detections"
+        }
+      },
+      "cloud_detections": {
+        "retrospective_detections": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "48-hour lookback for new threat intelligence"
+        },
+        "cloud_anomalous_process": {
+          "recommendation": "Moderate",
+          "severity": "MEDIUM",
+          "description": "AI-powered LOLBin detection"
+        }
+      }
+    },
+    "Mac": {
+      "sensor_capabilities": {
+        "unknown_executable_analysis": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Upload unknown executables for analysis"
+        },
+        "sensor_tamper_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Blocks attempts to tamper with the sensor"
+        }
+      },
+      "sensor_visibility": {
+        "script_based_execution": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Monitor scripts and shells"
+        },
+        "enhanced_network_visibility": {
+          "recommendation": "Enabled",
+          "severity": "MEDIUM",
+          "description": "Network traffic monitoring with JA4 fingerprinting"
+        }
+      },
+      "cloud_machine_learning": {
+        "cloud_anti_malware_detection": {
+          "recommendation": "Aggressive",
+          "severity": "HIGH",
+          "description": "Aggressive cloud ML detection"
+        },
+        "cloud_anti_malware_prevention": {
+          "recommendation": "Moderate+",
+          "severity": "HIGH",
+          "description": "Moderate cloud ML prevention"
+        }
+      },
+      "sensor_machine_learning": {
+        "sensor_anti_malware_detection": {
+          "recommendation": "Aggressive",
+          "severity": "HIGH",
+          "description": "Aggressive sensor ML detection"
+        },
+        "sensor_anti_malware_prevention": {
+          "recommendation": "Moderate+",
+          "severity": "HIGH",
+          "description": "Moderate sensor ML prevention"
+        }
+      },
+      "execution_blocking": {
+        "custom_indicator_blocking": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block custom IOCs"
+        },
+        "suspicious_process_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Block suspicious processes"
+        }
+      }
+    },
+    "Linux": {
+      "sensor_capabilities": {
+        "unknown_executable_analysis": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Upload unknown executables for analysis"
+        },
+        "sensor_tamper_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Protect sensor resources"
+        }
+      },
+      "sensor_visibility": {
+        "script_based_execution": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Monitor shell scripts"
+        },
+        "filesystem_visibility": {
+          "recommendation": "Enabled",
+          "severity": "MEDIUM",
+          "description": "Monitor file system activity"
+        },
+        "network_visibility": {
+          "recommendation": "Enabled",
+          "severity": "MEDIUM",
+          "description": "Monitor network connections"
+        }
+      },
+      "cloud_machine_learning": {
+        "cloud_anti_malware_detection": {
+          "recommendation": "Aggressive",
+          "severity": "HIGH",
+          "description": "Aggressive cloud ML detection"
+        },
+        "cloud_anti_malware_prevention": {
+          "recommendation": "Moderate+",
+          "severity": "HIGH",
+          "description": "Moderate cloud ML prevention"
+        }
+      },
+      "execution_blocking": {
+        "custom_indicator_blocking": {
+          "recommendation": "Enabled",
+          "severity": "HIGH",
+          "description": "Block custom IOCs"
+        },
+        "suspicious_process_prevention": {
+          "recommendation": "Enabled",
+          "severity": "CRITICAL",
+          "description": "Block suspicious processes"
+        }
+      }
+    }
+  },
+  "ml_levels": {
+    "Disabled": 0,
+    "Cautious": 1,
+    "Moderate": 2,
+    "Moderate+": 2.5,
+    "Aggressive": 3,
+    "Extra Aggressive": 4
+  }
+}

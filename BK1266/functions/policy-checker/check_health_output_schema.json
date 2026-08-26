@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Health Check Output",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "overall_score": {
+      "type": "number"
+    },
+    "policy_count": {
+      "type": "integer"
+    },
+    "enabled_policies": {
+      "type": "integer"
+    },
+    "policy_health": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string"
+    },
+    "policies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "platform": {"type": "string"},
+          "enabled": {"type": "boolean"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": ["timestamp", "overall_score", "status"]
+}

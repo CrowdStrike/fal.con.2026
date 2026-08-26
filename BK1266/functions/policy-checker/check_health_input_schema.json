@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Health Check Input",
+  "properties": {
+    "force_refresh": {
+      "type": "boolean",
+      "description": "Force a fresh API call"
+    }
+  },
+  "additionalProperties": false
+}

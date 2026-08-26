@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Health Score",
+  "description": "Overall health score with layer breakdown",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the health check was performed"
+    },
+    "overall_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Overall health score (0-100)"
+    },
+    "policy_count": {
+      "type": "integer",
+      "description": "Total number of policies"
+    },
+    "enabled_policies": {
+      "type": "integer",
+      "description": "Number of enabled policies"
+    },
+    "policy_health": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Policy health score"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Excellent", "Good", "Fair", "Needs Attention", "Critical"],
+      "description": "Health status"
+    }
+  },
+  "required": ["timestamp", "overall_score", "policy_count", "status"]
+}

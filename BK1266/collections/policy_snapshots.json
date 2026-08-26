@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Policy Snapshot",
+  "description": "Point-in-time snapshot of all policies",
+  "properties": {
+    "snapshot_id": {
+      "type": "string",
+      "description": "Unique snapshot identifier"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the snapshot was taken"
+    },
+    "snapshot_type": {
+      "type": "string",
+      "enum": ["manual", "scheduled", "baseline"],
+      "description": "Type of snapshot"
+    },
+    "prevention_policies": {
+      "type": "array",
+      "description": "Prevention policies at this point in time",
+      "items": {
+        "type": "object"
+      }
+    },
+    "response_policies": {
+      "type": "array",
+      "description": "Response policies at this point in time",
+      "items": {
+        "type": "object"
+      }
+    },
+    "firewall_policies": {
+      "type": "array",
+      "description": "Firewall policies at this point in time",
+      "items": {
+        "type": "object"
+      }
+    },
+    "total_policies": {
+      "type": "integer",
+      "description": "Total number of policies"
+    },
+    "health_score": {
+      "type": "number",
+      "description": "Overall health score at snapshot time"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "User who created the snapshot"
+    }
+  },
+  "required": ["snapshot_id", "timestamp", "snapshot_type", "total_policies"]
+}

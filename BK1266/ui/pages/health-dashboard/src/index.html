@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falcon Health Check</title>
+
+    <!-- Shoelace CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
+
+    <!-- Foundry JS SDK -->
+    <script type="module" src="https://assets.foundry.crowdstrike.com/sdk/foundry-js/v0.21.0/foundry.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0 0 8px 0;
+            color: #1a1a1a;
+        }
+
+        .score-card {
+            background: white;
+            padding: 32px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .score-value {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 16px 0;
+        }
+
+        .score-excellent { color: #22c55e; }
+        .score-good { color: #84cc16; }
+        .score-fair { color: #eab308; }
+        .score-attention { color: #f97316; }
+        .score-critical { color: #ef4444; }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+
+        .policies-table {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #e5e5e5;
+            font-weight: 600;
+            color: #666;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-enabled {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-disabled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        sl-button {
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Falcon Health Check</h1>
+            <p>Monitor your CrowdStrike Falcon environment health</p>
+            <sl-button variant="primary" id="refreshBtn">
+                <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
+                Run Health Check
+            </sl-button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <sl-spinner style="font-size: 3rem;"></sl-spinner>
+            <p>Analyzing your Falcon environment...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="results" style="display: none;">
+            <div class="score-card">
+                <div class="metric-label">Overall Health Score</div>
+                <div class="score-value" id="overallScore">--</div>
+                <sl-badge variant="neutral" id="statusBadge" pulse>Unknown</sl-badge>
+                <div style="margin-top: 16px; color: #666;">
+                    <small id="timestamp">Last checked: Never</small>
+                </div>
+            </div>
+
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-label">Total Policies</div>
+                    <div class="metric-value" id="totalPolicies">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Enabled Policies</div>
+                    <div class="metric-value" id="enabledPolicies">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Policy Health</div>
+                    <div class="metric-value" id="policyHealth">0%</div>
+                </div>
+            </div>
+
+            <div class="policies-table">
+                <h3>Prevention Policies</h3>
+                <table id="policiesTable">
+                    <thead>
+                        <tr>
+                            <th>Policy Name</th>
+                            <th>Platform</th>
+                            <th>Status</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="policiesBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { FalconApi } from 'https://assets.foundry.crowdstrike.com/sdk/foundry-js/v0.21.0/foundry.js';
+
+        const api = new FalconApi();
+
+        const elements = {
+            refreshBtn: document.getElementById('refreshBtn'),
+            loading: document.getElementById('loading'),
+            error: document.getElementById('error'),
+            results: document.getElementById('results'),
+            overallScore: document.getElementById('overallScore'),
+            statusBadge: document.getElementById('statusBadge'),
+            timestamp: document.getElementById('timestamp'),
+            totalPolicies: document.getElementById('totalPolicies'),
+            enabledPolicies: document.getElementById('enabledPolicies'),
+            policyHealth: document.getElementById('policyHealth'),
+            policiesBody: document.getElementById('policiesBody')
+        };
+
+        function showLoading() {
+            elements.loading.style.display = 'block';
+            elements.error.style.display = 'none';
+            elements.results.style.display = 'none';
+            elements.refreshBtn.loading = true;
+        }
+
+        function hideLoading() {
+            elements.loading.style.display = 'none';
+            elements.refreshBtn.loading = false;
+        }
+
+        function showError(message) {
+            elements.error.textContent = `Error: ${message}`;
+            elements.error.style.display = 'block';
+            elements.results.style.display = 'none';
+        }
+
+        function getScoreClass(status) {
+            const map = {
+                'Excellent': 'score-excellent',
+                'Good': 'score-good',
+                'Fair': 'score-fair',
+                'Needs Attention': 'score-attention',
+                'Critical': 'score-critical'
+            };
+            return map[status] || 'score-fair';
+        }
+
+        function getStatusVariant(status) {
+            const map = {
+                'Excellent': 'success',
+                'Good': 'success',
+                'Fair': 'warning',
+                'Needs Attention': 'warning',
+                'Critical': 'danger'
+            };
+            return map[status] || 'neutral';
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        function renderResults(data) {
+            // Update score
+            elements.overallScore.textContent = Math.round(data.overall_score);
+            elements.overallScore.className = 'score-value ' + getScoreClass(data.status);
+
+            // Update status badge
+            elements.statusBadge.textContent = data.status;
+            elements.statusBadge.variant = getStatusVariant(data.status);
+
+            // Update timestamp
+            elements.timestamp.textContent = `Last checked: ${formatTimestamp(data.timestamp)}`;
+
+            // Update metrics
+            elements.totalPolicies.textContent = data.policy_count;
+            elements.enabledPolicies.textContent = data.enabled_policies;
+            elements.policyHealth.textContent = Math.round(data.policy_health) + '%';
+
+            // Render policies table
+            elements.policiesBody.innerHTML = '';
+            data.policies.forEach(policy => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${policy.name}</strong></td>
+                    <td>${policy.platform}</td>
+                    <td>
+                        <span class="status-badge ${policy.enabled ? 'status-enabled' : 'status-disabled'}">
+                            ${policy.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                    </td>
+                    <td>${policy.description || 'No description'}</td>
+                `;
+                elements.policiesBody.appendChild(row);
+            });
+
+            elements.results.style.display = 'block';
+        }
+
+        async function runHealthCheck() {
+            showLoading();
+
+            try {
+                const response = await api.post('/api/health/check', {});
+
+                if (response.ok) {
+                    const data = await response.json();
+                    hideLoading();
+                    renderResults(data);
+                } else {
+                    hideLoading();
+                    const errorData = await response.json();
+                    showError(errorData.errors?.[0]?.message || 'Failed to run health check');
+                }
+            } catch (err) {
+                hideLoading();
+                showError(err.message || 'Network error occurred');
+            }
+        }
+
+        // Event listeners
+        elements.refreshBtn.addEventListener('click', runHealthCheck);
+
+        // Run on page load
+        runHealthCheck();
+    </script>
+
+    <!-- Shoelace JS -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace.js"></script>
+</body>
+</html>

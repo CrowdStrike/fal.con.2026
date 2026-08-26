@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Policy Baseline",
+  "description": "Approved baseline configuration for comparison",
+  "properties": {
+    "baseline_id": {
+      "type": "string",
+      "description": "Unique baseline identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable baseline name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of this baseline"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the baseline was created"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "User who created the baseline"
+    },
+    "snapshot_id": {
+      "type": "string",
+      "description": "Reference to the snapshot this baseline is based on"
+    },
+    "is_active": {
+      "type": "boolean",
+      "description": "Whether this is the active baseline"
+    },
+    "baseline_type": {
+      "type": "string",
+      "enum": ["manual", "best_practice", "compliance"],
+      "description": "Type of baseline"
+    },
+    "policy_expectations": {
+      "type": "object",
+      "description": "Expected policy configuration",
+      "properties": {
+        "prevention": {
+          "type": "object",
+          "properties": {
+            "required_settings": {
+              "type": "object"
+            },
+            "minimum_enabled": {
+              "type": "integer"
+            }
+          }
+        },
+        "response": {
+          "type": "object",
+          "properties": {
+            "required_settings": {
+              "type": "object"
+            },
+            "minimum_enabled": {
+              "type": "integer"
+            }
+          }
+        },
+        "firewall": {
+          "type": "object",
+          "properties": {
+            "required_settings": {
+              "type": "object"
+            },
+            "minimum_enabled": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "compliance_framework": {
+      "type": "string",
+      "description": "Compliance framework this baseline aligns with (e.g., NIST, CIS)"
+    }
+  },
+  "required": ["baseline_id", "name", "created_at", "is_active", "baseline_type"]
+}

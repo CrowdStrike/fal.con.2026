@@ -1,0 +1,311 @@
+name: health-check-app
+description: Falcon policy health monitoring with drift detection and best practice analysis
+logo: ""
+vendor: ""
+vendor_products: []
+use_case: Cloud security
+manifest_version: "2023-05-09"
+ignored:
+  - .+/node_modules$
+  - .+/node_modules/.+
+  - .+/venv$
+  - .+/venv/.+
+ui:
+  homepage: pages.health-dashboard-react
+  extensions: []
+  pages:
+    health-dashboard-react:
+      name: health-dashboard-react
+      description: Health check dashboard with drift monitoring
+      path: ui/pages/health-dashboard-react/src/dist
+      entrypoint: ui/pages/health-dashboard-react/src/dist/index.html
+      content_security_policy:
+        connect-src:
+          - https://cdn.jsdelivr.net
+          - '''self'''
+        style-src:
+          - '''unsafe-inline'''
+        style-src-elem:
+          - https://cdn.jsdelivr.net
+          - '''unsafe-inline'''
+        script-src:
+          - '''unsafe-inline'''
+          - '''unsafe-eval'''
+        form-action:
+          - '''self'''
+        img-src:
+          - https://cdn.jsdelivr.net
+          - '''self'''
+          - 'data:'
+        media-src:
+          - '''self'''
+        object-src:
+          - '''none'''
+      permissions: []
+    module-adoption:
+      name: module-adoption
+      description: Module Adoption Scorecard showing usage across all Falcon modules
+      path: ui/pages/module-adoption/src/dist
+      entrypoint: ui/pages/module-adoption/src/dist/index.html
+      content_security_policy:
+        connect-src:
+          - https://cdn.jsdelivr.net
+          - '''self'''
+        style-src:
+          - '''unsafe-inline'''
+        style-src-elem:
+          - https://cdn.jsdelivr.net
+          - '''unsafe-inline'''
+        script-src:
+          - '''unsafe-inline'''
+          - '''unsafe-eval'''
+        form-action:
+          - '''self'''
+        img-src:
+          - https://cdn.jsdelivr.net
+          - '''self'''
+          - 'data:'
+        media-src:
+          - '''self'''
+        object-src:
+          - '''none'''
+      permissions: []
+  dashboards: {}
+  navigation:
+    links:
+      - path: /
+        name: Health Dashboard
+        permissions: []
+        ref: pages.health-dashboard-react
+api_integrations: []
+rtr_scripts: []
+collections:
+  - name: health_scores
+    description: Store health check results over time
+    schema: collections/health_scores.json
+    permissions: []
+    workflow_integration: null
+  - name: policy_snapshots
+    description: Point-in-time snapshots of all policy configurations
+    schema: collections/policy_snapshots.json
+    permissions: []
+    workflow_integration: null
+  - name: drift_events
+    description: Detected configuration drift events
+    schema: collections/drift_events.json
+    permissions: []
+    workflow_integration: null
+  - name: baselines
+    description: Approved baseline configurations for comparison
+    schema: collections/baselines.json
+    permissions: []
+    workflow_integration: null
+  - name: sensor_health
+    description: Historical sensor health metrics and statistics
+    schema: collections/sensor_health.json
+    permissions: []
+    workflow_integration: null
+  - name: module_adoption_cache
+    description: Cached results from module adoption scans
+    schema: collections/module_adoption_cache.json
+    permissions: []
+    workflow_integration: null
+auth:
+  scopes:
+    - prevention-policies:read
+    - prevention-policies:write
+    - response-policies:read
+    - firewall-management:read
+    - devices:read
+    - detects:read
+  permissions: {}
+  roles: []
+functions:
+  - name: policy-checker
+    config: null
+    description: Comprehensive policy health check across all policy types
+    path: functions/policy-checker
+    environment_variables: {}
+    handlers:
+      - name: check_health
+        description: Fetches and analyzes prevention, response, and firewall policies
+        method: POST
+        api_path: /api/health/check
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+      - name: apply_best_practices
+        description: Apply CrowdStrike best practice recommendations to a prevention policy
+        method: POST
+        api_path: /api/policy/apply-best-practices
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+      - name: test_policy_change
+        description: Simple test function to verify policy modification works
+        method: POST
+        api_path: /api/policy/test-change
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+    language: python
+  - name: snapshot-manager
+    config: null
+    description: Create and manage policy snapshots for drift detection
+    path: functions/snapshot-manager
+    environment_variables: {}
+    handlers:
+      - name: create_snapshot
+        description: Create a new snapshot of all policies
+        method: POST
+        api_path: /api/snapshot/create
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+      - name: list_snapshots
+        description: List all snapshots with optional filtering
+        method: GET
+        api_path: /api/snapshot/list
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+      - name: get_snapshot
+        description: Get full details of a specific snapshot
+        method: GET
+        api_path: /api/snapshot/{snapshot_id}
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+    language: python
+  - name: drift-detector
+    config: null
+    description: Detect configuration drift by comparing snapshots
+    path: functions/drift-detector
+    environment_variables: {}
+    handlers:
+      - name: detect_drift
+        description: Compare baseline and current snapshots to detect drift
+        method: POST
+        api_path: /api/drift/detect
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+      - name: get_audit_events
+        description: Fetch real-time audit events for policy changes
+        method: GET
+        api_path: /api/audit/events
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+    language: python
+  - name: sensor-health
+    config: null
+    description: Analyze sensor versions, OS distributions, and operational status
+    path: functions/sensor-health
+    environment_variables: {}
+    handlers:
+      - name: get_sensor_health
+        description: Comprehensive sensor health check with version and OS analysis
+        method: GET
+        api_path: /api/sensors/health
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+    language: python
+  - name: module-adoption-checker
+    config: null
+    description: Check adoption signals across all licensed Falcon modules
+    path: functions/module-adoption-checker
+    environment_variables: {}
+    handlers:
+      - name: check_adoption
+        description: Check adoption signals across all licensed Falcon modules
+        method: GET
+        api_path: /api/adoption/check
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+      - name: check_discover_utilization
+        description: Check Falcon Discover platform utilization by verifying if assets are being reviewed
+        method: GET
+        api_path: /api/adoption/discover-utilization
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+    language: python
+  - name: operations-metrics
+    config: null
+    description: Track operational metrics including uninstall protection, version currency, and policy assignments
+    path: functions/operations-metrics
+    environment_variables: {}
+    handlers:
+      - name: get_metrics
+        description: Track operational metrics including uninstall protection, version currency, and policy assignments
+        method: GET
+        api_path: /api/operations/metrics
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+    language: python
+  - name: host-health-checker
+    config: null
+    description: Consolidated host operational health checks (RFM, stale, unmanaged, isolated, policy gaps, host groups)
+    path: functions/host-health-checker
+    environment_variables: {}
+    handlers:
+      - name: get_host_health
+        description: Comprehensive host health check analyzing RFM, stale, unmanaged, isolated hosts, policy gaps, and host group health
+        method: POST
+        api_path: /api/hosts/health
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+    language: python
+  - name: detection-analytics
+    config: null
+    description: Analyze recent detections (last 7 days) with severity breakdown, trending, and top detection types
+    path: functions/detection-analytics
+    environment_variables: {}
+    handlers:
+      - name: get_detection_analytics
+        description: Analyze recent detections with severity breakdown and trending
+        method: GET
+        api_path: /api/detections/analytics
+        payload_type: ""
+        request_schema: null
+        response_schema: null
+        workflow_integration: null
+        permissions: []
+    language: python
+workflows: []
+parsers: []
+logscale:
+  saved_searches: []
+lookup_files: []
+docs: {}

@@ -1,0 +1,3 @@
+# Fixed SDK versions
+crowdstrike-foundry-function==1.1.4
+crowdstrike-falconpy

@@ -1,0 +1,426 @@
+{
+  "version": "2025.08",
+  "source": "CrowdStrike Prevention Policy Best Practices — verified from live Phase 2/3 policies",
+  "ml_levels": {
+    "DISABLED": 0,
+    "Disabled": 0,
+    "CAUTIOUS": 1,
+    "Cautious": 1,
+    "MODERATE": 2,
+    "Moderate": 2,
+    "MODERATE+": 2.5,
+    "Moderate+": 2.5,
+    "AGGRESSIVE": 3,
+    "Aggressive": 3,
+    "EXTRA_AGGRESSIVE": 4,
+    "Extra Aggressive": 4
+  },
+  "platforms": {
+    "Windows": {
+      "SensorTamperingProtection": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Sensor Tamper Prevention"
+      },
+      "UnknownExecutables": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Unknown Executable Analysis"
+      },
+      "UnknownDetectionRelatedExecutables": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Unknown Detection-Related Executable Analysis"
+      },
+      "AdditionalUserModeData": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Additional User Mode Data Visibility"
+      },
+      "InterpreterProtection": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Interpreter-Only Visibility"
+      },
+      "EngineProtectionV2": {
+        "recommendation": "Enabled",
+        "severity": "MEDIUM",
+        "description": "System Management Engine Visibility"
+      },
+      "ScriptBasedExecutionMonitoring": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Script-Based Execution Visibility"
+      },
+      "HTTPDetections": {
+        "recommendation": "Enabled",
+        "severity": "MEDIUM",
+        "description": "HTTP Visibility and Detection"
+      },
+      "HardwareEnhancedExploitDetection": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Hardware-Enhanced Exploit Detection"
+      },
+      "EnhancedExploitationVisibility": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Enhanced Exploitation Visibility"
+      },
+      "MemoryScan": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Memory Scanning with GPU"
+      },
+      "CPUMemoryScan": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Memory Scanning with CPU"
+      },
+      "FirmwareAnalysisExtraction": {
+        "recommendation": "Enabled",
+        "severity": "MEDIUM",
+        "description": "BIOS Firmware Deep Visibility"
+      },
+      "CloudAntiMalware": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "HIGH",
+        "description": "Cloud-Based Anti-Malware — Detection: Aggressive, Prevention: Moderate+"
+      },
+      "AdwarePUP": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "MEDIUM",
+        "description": "Cloud-Based Adware & PUP — Detection: Aggressive, Prevention: Moderate+"
+      },
+      "OnSensorMLSlider": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "HIGH",
+        "description": "Sensor-Based Anti-Malware — Detection: Aggressive, Prevention: Moderate+"
+      },
+      "CloudAntiMalwareForMicrosoftOfficeFiles": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "MEDIUM",
+        "description": "Cloud Anti-malware for Microsoft Office Files — Detection: Aggressive, Prevention: Moderate"
+      },
+      "NextGenAV": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Quarantine & Security Center Registration"
+      },
+      "NextGenAVQuarantineOnRemovableMedia": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Quarantine on Removable Media"
+      },
+      "DetectOnWrite": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Detect on Write"
+      },
+      "QuarantineOnWrite": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Quarantine on Write"
+      },
+      "CustomBlacklisting": {
+        "recommendation": "Enabled",
+        "severity": "MEDIUM",
+        "description": "Custom Indicator Blocking"
+      },
+      "PreventSuspiciousProcesses": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Suspicious Process Prevention"
+      },
+      "SuspiciousRegistryOperations": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Suspicious Registry Operation Prevention"
+      },
+      "MaliciousPowershell": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Suspicious Script and Command Prevention"
+      },
+      "IntelPrevention": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Intelligence-Sourced Threat Prevention"
+      },
+      "SuspiciousKernelDrivers": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Driver Load Prevention"
+      },
+      "VulnerableDriverProtection": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Vulnerable Driver Protection"
+      },
+      "BootConfigurationDatabaseProtection": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Boot Configuration Database Protection"
+      },
+      "FileSystemContainmentEnabled": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "File System Containment"
+      },
+      "ForceASLR": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "ASLR Bypass Prevention"
+      },
+      "HeapSprayPreallocation": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Heap Spray Pre-allocation Prevention"
+      },
+      "NullPageAllocation": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "NULL Page Allocation Prevention"
+      },
+      "SEHOverwriteProtection": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "SEH Overwrite Prevention"
+      },
+      "BackupDeletion": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Backup Deletion Prevention"
+      },
+      "Cryptowall": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Cryptowall Prevention"
+      },
+      "FileEncryption": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "File Encryption Prevention"
+      },
+      "Locky": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Locky Prevention"
+      },
+      "FileSystemAccess": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "File System Access Prevention"
+      },
+      "VolumeShadowCopyProtect": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Volume Shadow Copy Protection"
+      },
+      "ApplicationExploitationActivity": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Application Exploitation Prevention"
+      },
+      "ChopperWebshell": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Chopper Webshell Prevention"
+      },
+      "DriveByDownload": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Drive-by Download Prevention"
+      },
+      "ProcessHollowing": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Code Injection Prevention"
+      },
+      "JavaScriptViaRundll32": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "JavaScript Execution Via Rundll32 Prevention"
+      },
+      "CredentialDumping": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Credential Dumping Prevention"
+      }
+    },
+    "Mac": {
+      "SensorTamperingProtection": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Sensor Tamper Prevention"
+      },
+      "UnknownExecutables": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Unknown Executable Analysis"
+      },
+      "UnknownDetectionRelatedExecutables": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Unknown Detection-Related Executable Analysis"
+      },
+      "ScriptBasedExecutionMonitoring": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Script-Based Execution Visibility"
+      },
+      "CloudAntiMalware": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "HIGH",
+        "description": "Cloud-Based Anti-Malware — Detection: Aggressive, Prevention: Moderate+"
+      },
+      "AdwarePUP": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "MEDIUM",
+        "description": "Cloud-Based Adware & PUP — Detection: Aggressive, Prevention: Moderate+"
+      },
+      "OnSensorMLSlider": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "HIGH",
+        "description": "Sensor-Based Anti-Malware — Detection: Aggressive, Prevention: Moderate+"
+      },
+      "OnSensorMLAdwarePUPSlider": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "MEDIUM",
+        "description": "Sensor Adware & PUP — Detection: Aggressive, Prevention: Moderate"
+      },
+      "NextGenAV": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Quarantine"
+      },
+      "DetectOnWrite": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Detect on Write"
+      },
+      "QuarantineOnWrite": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Quarantine on Write"
+      },
+      "CustomBlacklisting": {
+        "recommendation": "Enabled",
+        "severity": "MEDIUM",
+        "description": "Custom Indicator Blocking"
+      },
+      "PreventSuspiciousProcesses": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Suspicious Process Prevention"
+      },
+      "IntelPrevention": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Intelligence-Sourced Threat Prevention"
+      },
+      "XPCOMShell": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "XPCOM Shell Prevention"
+      },
+      "ChopperWebshell": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Chopper Webshell Prevention"
+      },
+      "EmpyreBackdoor": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Empyre Backdoor Prevention"
+      },
+      "KcPasswordDecoded": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "KcPassword Decoded Prevention"
+      },
+      "HashCollector": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Hash Collector Prevention"
+      }
+    },
+    "Linux": {
+      "SensorTamperingProtection": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Sensor Tamper Prevention"
+      },
+      "UnknownExecutables": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Unknown Executable Analysis"
+      },
+      "UnknownDetectionRelatedExecutables": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Unknown Detection-Related Executable Analysis"
+      },
+      "ScriptBasedExecutionMonitoring": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Script-Based Execution Visibility"
+      },
+      "FilesystemVisibility": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Filesystem Visibility"
+      },
+      "NetworkVisibility": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Network Visibility"
+      },
+      "CloudAntiMalware": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "HIGH",
+        "description": "Cloud-Based Anti-Malware — Detection: Aggressive, Prevention: Moderate+"
+      },
+      "OnSensorMLSlider": {
+        "detection_recommendation": "Aggressive",
+        "prevention_recommendation": "Moderate",
+        "severity": "HIGH",
+        "description": "Sensor-Based Anti-Malware — Detection: Aggressive, Prevention: Moderate+"
+      },
+      "NextGenAV": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Quarantine"
+      },
+      "OnWriteScriptFileVisibility": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "On Write Script File Visibility"
+      },
+      "CustomBlacklisting": {
+        "recommendation": "Enabled",
+        "severity": "MEDIUM",
+        "description": "Custom Indicator Blocking"
+      },
+      "PreventSuspiciousProcesses": {
+        "recommendation": "Enabled",
+        "severity": "CRITICAL",
+        "description": "Suspicious Process Prevention"
+      },
+      "DriftPrevention": {
+        "recommendation": "Enabled",
+        "severity": "HIGH",
+        "description": "Container Drift Prevention"
+      }
+    }
+  }
+}

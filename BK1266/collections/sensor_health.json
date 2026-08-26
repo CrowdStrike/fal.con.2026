@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Sensor Health Snapshot",
+  "description": "Historical sensor health metrics",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this health check was performed"
+    },
+    "health_score": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Excellent", "Good", "Fair", "Needs Attention", "Critical", "Unknown"]
+        },
+        "inactive_percentage": {
+          "type": "number"
+        },
+        "rfm_percentage": {
+          "type": "number"
+        },
+        "outdated_percentage": {
+          "type": "number"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "total_sensors": {
+          "type": "integer"
+        },
+        "active_sensors": {
+          "type": "integer"
+        },
+        "inactive_sensors": {
+          "type": "integer"
+        },
+        "rfm_sensors": {
+          "type": "integer"
+        }
+      }
+    },
+    "platform_breakdown": {
+      "type": "object",
+      "description": "Sensor counts by platform"
+    },
+    "version_distribution": {
+      "type": "object",
+      "description": "Agent version distribution"
+    },
+    "os_distribution": {
+      "type": "object",
+      "description": "OS version distribution"
+    },
+    "top_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+          },
+          "issue": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": ["timestamp"]
+}

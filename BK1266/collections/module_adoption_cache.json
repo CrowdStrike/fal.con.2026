@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Module Adoption Cache",
+  "description": "Cached results from module adoption scans",
+  "properties": {
+    "scan_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this scan was performed"
+    },
+    "overall_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Average adoption score across all licensed modules"
+    },
+    "overall_level": {
+      "type": "string",
+      "enum": ["Excellent", "Good", "Partial", "Needs Attention"],
+      "description": "Overall adoption level"
+    },
+    "modules": {
+      "type": "array",
+      "description": "Per-module adoption results",
+      "items": {
+        "type": "object",
+        "properties": {
+          "module_name": {
+            "type": "string"
+          },
+          "module_key": {
+            "type": "string"
+          },
+          "licensed": {
+            "type": "boolean"
+          },
+          "adoption_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "adoption_level": {
+            "type": "string",
+            "enum": ["Excellent", "Good", "Partial", "Inactive", "Not Licensed"]
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "feature_name": {
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "top_recommendation": {
+            "type": "string"
+          },
+          "api_scopes_used": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "scan_duration_ms": {
+      "type": "number",
+      "description": "How long the scan took in milliseconds"
+    }
+  },
+  "required": ["scan_timestamp", "modules"]
+}

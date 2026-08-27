@@ -1,0 +1,300 @@
+# This is an exported workflow. Editing this file is not recommended.
+
+name: Bulk Processing Discovery
+description: Enhanced on-demand workflow that reads users from a CSV lookup file and queries all machines they've logged onto in the last (configurable) days. Features flexible username matching (supports both usernames and email addresses), extended timeframe options (1-90 days), enhanced device classification, and login context analysis. Creates enriched output CSV with details needed for Bulk Processing workflows, including comprehensive error handling and email notifications.
+trigger:
+    next:
+        - GetLookupFileMetadata
+    name: On demand
+    parameters:
+        properties:
+            additional_emails:
+                type: string
+                title: Additional Email Recipients
+                description: Optional additional email address to receive notifications (single email only)
+                default: ""
+            csv_filename:
+                pattern: ^.+\.csv$
+                type: string
+                title: User CSV Filename
+                description: Name of the CSV file containing usernames (one username per row, e.g., acme_users_w1.csv)
+                default: acme_users_w1.csv
+            timeframe_days:
+                enum:
+                    - "1"
+                    - "3"
+                    - "5"
+                    - "7"
+                    - "10"
+                    - "14"
+                    - "30"
+                    - "60"
+                    - "90"
+                type: string
+                title: Lookback Timeframe
+                description: Number of days to look back for user login history - extended options 1, 3, 5, 7, 10, 14, 30, 60, 90 days
+                default: "30"
+        required:
+            - csv_filename
+            - timeframe_days
+        type: object
+    type: On demand
+actions:
+    CreateLookupFile:
+        id: 51c4db34ab30465f796d7550f3e3e97b
+        name: Create lookup file
+        properties:
+            lookup_file_content_file: ${UserToMachineQuery7d.file_csv}
+            lookup_file_content_type: file
+            lookup_file_name: ${"Bulk_Discovery_" + cs.timestamp.format(cs.timestamp.now(), "20060102_150405", "America/New_York") + ".csv"}
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    GetLookupFileMetadata:
+        next:
+            - lookup_file_exists_is_equal_to_true
+        id: ace50afa2ea8438162f098b621f790fb
+        name: Get lookup file metadata
+        properties:
+            lookup_file_name: ${data['csv_filename']}
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    NoDataFoundNotification:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        name: Print data
+        properties:
+            text_data: 'ERROR: No user logon data found in the last ${data[''timeframe_days'']} days for users in CSV file: ${data[''csv_filename'']}. Consider: 1) Extending time range beyond ${data[''timeframe_days'']} days, 2) Verifying usernames in CSV file are correct, 3) Checking if users have logged on recently in this environment.'
+        version_constraint: ~1
+    PrintData2:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        name: Print data - 2
+        properties:
+            fields:
+                - ${data['UserToMachineQuery7d.event_count']}
+        version_constraint: ~1
+    PrintData3:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        name: Print data - 3
+        properties:
+            text_data: ${data['GetLookupFileMetadata.lookup_file_name']} does not exist
+        version_constraint: ~1
+    SendEmail4:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 4
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            msg: ${data['GetLookupFileMetadata.lookup_file_name']} doesn't exist
+            msg_type: text
+            subject: Bulk Processing Discovery - Lookup File Doesn't Exist
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    SendNoDataEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 3
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            msg: |-
+                Bulk Processing Discovery Workflow - No Data Found
+
+                Workflow: ${data['csv_filename']} - ${data['timeframe_days']} day lookback
+
+                ERROR: No user logon data found for users in the specified CSV file within the ${data['timeframe_days']} day timeframe.
+
+                Recommendations:
+                1. Extend time range beyond ${data['timeframe_days']} days
+                2. Verify usernames in CSV file are correct
+                3. Check if users have logged on recently in this environment
+
+                Generated: ${cs.timestamp.format(cs.timestamp.now(), "2006-01-02 15:04:05 MST", "America/New_York")}
+            msg_type: text
+            subject: 'Bulk Processing Discovery No Data Found: ${data[''csv_filename'']} (${data[''timeframe_days'']}d lookback) - 0 results'
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    SendResultsEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 5
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            file_attachment: ${UserToMachineQuery7d.file_csv}
+            msg: |-
+                Bulk Processing Discovery Workflow Results
+
+                Workflow: ${data['csv_filename']} - ${data['timeframe_days']} day lookback
+
+                Results: ${UserToMachineQuery7d.event_count} user-machine combinations found
+
+                CSV file contains the complete results for bulk containment processing.
+
+                Generated: ${cs.timestamp.format(cs.timestamp.now(), "2006-01-02 15:04:05 MST", "America/New_York")}
+            msg_type: text
+            subject: 'Bulk Processing Discovery Results: ${data[''csv_filename'']} (${data[''timeframe_days'']}d lookback) - ${UserToMachineQuery7d.event_count} results'
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    UserToMachineQuery7d:
+        next:
+            - data_found___create_lookup_file_and_send_email
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        class: Inline.QueryEvent
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    csv_filename:
+                        type: string
+                        title: CSV Filename
+                        default: acme_users_w1.csv
+                required:
+                    - csv_filename
+                type: object
+                description: CSV filename parameter
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    ComputerName:
+                        type: string
+                        title: ComputerName
+                    DeviceType:
+                        type: string
+                        title: DeviceType
+                    LoginContext:
+                        type: string
+                        title: LoginContext
+                    LogonDomain:
+                        type: string
+                        title: LogonDomain
+                    UPN:
+                        type: string
+                        title: UPN
+                    UserName:
+                        type: string
+                        title: UserName
+                    aid:
+                        type: string
+                        title: Aid
+                    event_platform:
+                        type: string
+                        title: Event Platform
+                    latest_login_time:
+                        type: string
+                        title: Latest login time
+                required:
+                    - ComputerName
+                    - DeviceType
+                    - UserName
+                    - aid
+                    - latest_login_time
+                type: object
+                description: Enhanced response schema with login context
+            config:
+                description: Enhanced user-machine discovery with flexible timeframes and username handling
+                end: now
+                last_modified_by: 00000000-0000-0000-0000-000000000000
+                last_modified_by_user:
+                    email: soc.engineer@acme.com
+                repo_or_view: search-all
+                search_name: UserToMachineQueryEnhanced
+                search_query: |-
+                    /* Create ad-hoc table with device classification */
+                    defineTable(query={
+                        (#data_source_name=aidmaster OR #data_source_name=managedassets-ds)
+                        | groupBy(aid, function=[selectLast([ComputerName, ProductType, event_platform])], limit=max)
+                        | case {
+                            ProductType="1" | DeviceType := "Workstation";
+                            ProductType="2" | DeviceType := "Domain Controller";
+                            ProductType="3" | DeviceType := "Server";
+                            ProductType="Mobile" | DeviceType := "Mobile Device";
+                            ProductType="" OR ProductType=null | DeviceType := "Unknown";
+                            * | DeviceType := "Other";
+                        }
+                    }, name="device_types", include=[aid, ComputerName, DeviceType, ProductType, event_platform])
+
+                    /* Filter UserLogon events using CSV lookup file */
+                    | #event_simpleName=UserLogon
+                    | match(?csv_filename, field=UserName)
+                    | UserName != "LOCAL SERVICE"
+                    | UserName != "SYSTEM"
+                    | UserName != "ANONYMOUS LOGON"
+                    | groupBy([UserName, ComputerName, aid], function=[
+                        max(@timestamp, as=latest_login_time),
+                        selectLast([LogonDomain, UserIsAdmin, UserPrincipal, LogonType])
+                      ])
+                    | match(table="device_types", field=aid)
+                    /* Handle null ComputerName values to satisfy schema requirements */
+                    | case {
+                        ComputerName=null OR ComputerName="" | ComputerName := "Unknown-Computer";
+                        * | ComputerName := ComputerName;
+                      }
+                    | formatTime(format="%m/%d/%Y %H:%M %z", field=latest_login_time, as=latest_login_time, timezone="America/New_York")
+                    /* Construct UPN field */
+                    | case {
+                        UserPrincipal!="" AND UserPrincipal!=null | UPN := UserPrincipal;
+                        LogonDomain!="" AND LogonDomain!=null | UPN := format("%s@%s", field=[UserName, LogonDomain]);
+                        * | UPN := UserName;
+                      }
+                    /* Add basic login context */
+                    | case {
+                        LogonType="2" | LoginContext := "Interactive";
+                        LogonType="3" | LoginContext := "Network";
+                        LogonType="10" | LoginContext := "RemoteInteractive";
+                        * | LoginContext := "Other";
+                      }
+                    | rename(field=@timestamp, as=timestamp)
+                    | rename(field=@id, as=id)
+                    | table([UserName, ComputerName, DeviceType, aid, UPN, LogonDomain, latest_login_time, LoginContext, event_platform])
+                    | head(1500)
+                search_query_args:
+                    csv_filename: acme_users_w1.csv
+                start: 30d
+                tags: []
+        name: Workflow-specific event query
+        properties:
+            csv_filename: ${data['csv_filename']}
+            logscale_search_end_time: now
+            logscale_search_start_time: ${data['timeframe_days'] + " days"}
+            output_files_only: false
+            workflow_csv_header_fields:
+                - DeviceType
+                - ComputerName
+                - aid
+                - UserName
+                - UPN
+                - LogonDomain
+                - latest_login_time
+                - LoginContext
+                - event_platform
+            workflow_export_event_query_results_to_csv: true
+        version_constraint: ~1
+conditions:
+    data_found___create_lookup_file_and_send_email:
+        next:
+            - CreateLookupFile
+            - SendResultsEmail
+            - PrintData2
+        expression: UserToMachineQuery7d.event_count:>0
+        display:
+            - Data found - create lookup file and send email
+        else_if: no_data_found___output_error_message_and_send_email
+    lookup_file_exists_is_equal_to_true:
+        next:
+            - UserToMachineQuery7d
+        expression: GetLookupFileMetadata.lookup_file_exists:true
+        display:
+            - Lookup file exists is equal to True
+        else:
+            - PrintData3
+            - SendEmail4
+    no_data_found___output_error_message_and_send_email:
+        next:
+            - NoDataFoundNotification
+            - SendNoDataEmail
+        expression: UserToMachineQuery7d.event_count:0
+        display:
+            - No data found - output error message and send email
+output_fields:
+    - csv_filename
+    - timeframe_days
+    - Workflow.Definition.Name
+    - Workflow.Execution.Time
+    - UserToMachineQuery7d.event_count

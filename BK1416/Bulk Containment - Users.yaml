@@ -1,0 +1,459 @@
+# This is an exported workflow. Editing this file is not recommended.
+
+name: Bulk Processing Users
+description: Complete bulk user containment workflow with enhanced AD discovery, full containment capabilities, and rollback functionality. Uses getUserIdentityContext to distinguish between Hybrid (Entra) and AD-only accounts. Includes bidirectional operations for containment and release. Automatically deduplicates users by UserName to prevent multiple processing of the same user.
+trigger:
+    next:
+        - GetLookupFileMetadata
+    name: On demand
+    parameters:
+        properties:
+            actionSelector:
+                enum:
+                    - Disable User and Revoke Tokens / Remove Existing Sign-in Sessions
+                    - Re-enable User
+                type: string
+                title: Action to Perform
+                description: Choose whether to disable users or re-enable them from containment
+            additional_emails:
+                type: string
+                title: Additional Email Recipients
+                description: Optional additional email address to receive notifications (leave blank if not needed)
+                default: ""
+            csv_filename:
+                pattern: ^.+\.csv$
+                type: string
+                title: CSV Filename
+                description: CSV file from Discovery workflow containing user information (e.g., Bulk_Discovery_20251123_204904.csv)
+                default: Bulk_Discovery_20251124_101308.csv
+        required:
+            - csv_filename
+            - actionSelector
+        type: object
+    type: On demand
+actions:
+    GetLookupFileMetadata:
+        next:
+            - lookup_file_exists_is_equal_to_true
+        id: ace50afa2ea8438162f098b621f790fb
+        name: Get lookup file metadata
+        properties:
+            lookup_file_name: ${data['csv_filename']}
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    NoUsersFoundNotification:
+        next:
+            - SendNoUsersEmail
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        name: Print data
+        properties:
+            text_data: 'ERROR: No users found in CSV file: ${data[''csv_filename'']}. Verify the CSV file contains valid user data from Discovery workflow execution.'
+        version_constraint: ~1
+    PrintData4:
+        next:
+            - SendEmail4
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        name: Print data - 4
+        properties:
+            text_data: ${data['GetLookupFileMetadata.lookup_file_name']} does not exist
+        version_constraint: ~1
+    ReadCSVFile:
+        next:
+            - users_found___proceed_with_bulk_operations
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        class: Inline.QueryEvent
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    csv_filename:
+                        type: string
+                        title: CSV Filename
+                        default: Bulk_Discovery_20251123_204904.csv
+                required:
+                    - csv_filename
+                type: object
+                description: CSV filename parameter
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    ComputerName:
+                        type: string
+                        title: ComputerName
+                    UPN:
+                        type: string
+                        title: UPN
+                    UserName:
+                        type: string
+                        title: UserName
+                required:
+                    - UPN
+                    - UserName
+                type: object
+                description: User list from CSV for bulk operations with enhanced AD discovery
+            config:
+                description: Read CSV file containing user information with enhanced AD discovery and automatic deduplication by UserName
+                end: now
+                last_modified_by: 00000000-0000-0000-0000-000000000000
+                last_modified_by_user:
+                    email: soc.engineer@acme.com
+                repo_or_view: search-all
+                search_name: Read User CSV File for Enhanced Bulk Containment with Deduplication
+                search_query: |-
+                    readfile(?csv_filename)
+                    | UPN != ""
+                    | UserName != ""
+                    | sort(UserName)
+                    | groupBy(UserName, function=selectlast(UPN, ComputerName))
+                    | head(500)
+                search_query_args:
+                    csv_filename: ${data['csv_filename']}
+                start: 1h
+                tags:
+                    - csv-read
+                    - user-containment
+                    - bulk-operations
+                    - enhanced-ad-discovery
+        name: Workflow-specific event query
+        properties:
+            csv_filename: ${data['csv_filename']}
+            output_files_only: false
+            workflow_csv_header_fields:
+                - UPN
+                - UserName
+                - ComputerName
+            workflow_export_event_query_results_to_csv: true
+        version_constraint: ~1
+    SendDisableEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 6
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            file_attachment: ${ReadCSVFile.file_csv}
+            msg: |-
+                Bulk Processing Users - Execution Complete
+
+                EXECUTION SUMMARY:
+                • CSV File: ${data['csv_filename']}
+                • Action: Disable User and Revoke Tokens / Remove Existing Sign-in Sessions
+                • Users Processed: ${ReadCSVFile.event_count} users identified and targeted
+                • Commands Issued: Containment commands issued to all ${ReadCSVFile.event_count} users
+                • Execution Time: ${Workflow.Execution.Time}
+
+                WORKFLOW VALIDATION:
+                • CSV Processing: Successfully read ${ReadCSVFile.event_count} users matching criteria (UPN, UserName)
+                • Enhanced AD Discovery: getUserIdentityContext used for account type detection
+                • Command Execution: Containment commands issued to all users found in CSV
+                • Individual User Tracking: Available via detailed execution logs
+
+                ACCOUNT TYPE HANDLING:
+                • Hybrid Accounts: Full Entra containment (disable + token revocation + group membership)
+                • AD-Only Accounts: Group membership changes only with notifications for manual action
+                • Enhanced Logging: All account types and actions logged for audit purposes
+
+                MANUAL VERIFICATION:
+                To verify specific user status in Entra/Azure AD:
+                1. Azure AD Portal > Users
+                2. Search for user by UPN/username
+                3. Check account status and group memberships
+                4. Review sign-in logs for session revocation confirmation
+
+                Complete user list attached as CSV file.
+
+                NOTE: Additional recipients parameter is available but currently not active.
+                To enable additional email recipients, contact the workflow administrator.
+            msg_type: text
+            skip_workflow_header: false
+            subject: Bulk Processing Users - ${ReadCSVFile.event_count} Users Targeted
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    SendEmail4:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 4
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            msg: ${data['GetLookupFileMetadata.lookup_file_name']} does not exist
+            msg_type: text
+            subject: Bulk Processing Users - Invalid Lookup File
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    SendEnableEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 5
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            file_attachment: ${ReadCSVFile.file_csv}
+            msg: |-
+                Bulk Processing Users Release - Execution Complete
+
+                EXECUTION SUMMARY:
+                • CSV File: ${data['csv_filename']}
+                • Action: Re-enable User
+                • Users Processed: ${ReadCSVFile.event_count} users identified and targeted
+                • Commands Issued: Release commands issued to all ${ReadCSVFile.event_count} users
+                • Execution Time: ${Workflow.Execution.Time}
+
+                WORKFLOW VALIDATION:
+                • CSV Processing: Successfully read ${ReadCSVFile.event_count} users matching criteria (UPN, UserName)
+                • Enhanced AD Discovery: getUserIdentityContext used for account type detection
+                • Command Execution: Release commands issued to all users found in CSV
+                • Individual User Tracking: Available via detailed execution logs
+
+                ACCOUNT TYPE HANDLING:
+                • Hybrid Accounts: Full Entra release (enable + group removal)
+                • AD-Only Accounts: Group membership changes only with notifications for manual action
+                • Enhanced Logging: All account types and actions logged for audit purposes
+
+                MANUAL VERIFICATION:
+                To verify specific user status in Entra/Azure AD:
+                1. Azure AD Portal > Users
+                2. Search for user by UPN/username
+                3. Check account status and group memberships
+                4. Verify user can successfully sign in
+
+                Complete user list attached as CSV file.
+
+                NOTE: Additional recipients parameter is available but currently not active.
+                To enable additional email recipients, contact the workflow administrator.
+            msg_type: text
+            skip_workflow_header: false
+            subject: Bulk Processing Users Release - ${ReadCSVFile.event_count} Users Targeted
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    SendNoUsersEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 7
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            msg: |-
+                Bulk Processing Users Workflow - No Users Found
+
+                Workflow: ${data['csv_filename']} user operations
+
+                ERROR: No users found in CSV file.
+
+                Troubleshooting:
+                1. Verify CSV file exists: ${data['csv_filename']}
+                2. Check CSV contains UPN and UserName columns
+                3. Ensure UPN and UserName fields are populated
+                4. Confirm CSV was generated by Discovery workflow
+
+                Generated: ${cs.timestamp.format(cs.timestamp.now(), "2006-01-02 15:04:05 MST", "America/New_York")}
+            msg_type: text
+            subject: 'Bulk Processing Users No Users: ${data[''csv_filename'']} - 0 users found'
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+conditions:
+    action_to_perform_is_equal_to_disable_user_and_revoke_tokens__remove_existing_sign_in_sessions:
+        next:
+            - ProcessAllUsers_Disable
+        expression: actionSelector:'Disable User and Revoke Tokens / Remove Existing Sign-in Sessions'
+        display:
+            - Action to Perform is equal to Disable User and Revoke Tokens / Remove Existing Sign-in Sessions
+    action_to_perform_is_equal_to_re_enable_user:
+        next:
+            - ProcessAllUsers_Enable
+        expression: actionSelector:'Re-enable User'
+        display:
+            - Action to Perform is equal to Re-enable User
+        else_if: action_to_perform_is_equal_to_disable_user_and_revoke_tokens__remove_existing_sign_in_sessions
+    lookup_file_exists_is_equal_to_true:
+        next:
+            - ReadCSVFile
+        expression: GetLookupFileMetadata.lookup_file_exists:true
+        display:
+            - Lookup file exists is equal to True
+        else:
+            - PrintData4
+    no_users_found___output_error_message:
+        next:
+            - NoUsersFoundNotification
+        expression: ReadCSVFile.event_count:0
+        display:
+            - No users found - output error message
+    users_found___proceed_with_bulk_operations:
+        next:
+            - action_to_perform_is_equal_to_re_enable_user
+        expression: ReadCSVFile.event_count:>0
+        display:
+            - Users found - proceed with bulk operations
+        else_if: no_users_found___output_error_message
+loops:
+    ProcessAllUsers_Disable:
+        display: For each user from CSV; Enhanced AD Discovery - Disable users and revoke tokens
+        name: For each user from CSV; Enhanced AD Discovery - Disable users and revoke tokens
+        next:
+            - SendDisableEmail
+        for:
+            input: ReadCSVFile.results
+            continue_on_partial_execution: true
+            sequential: false
+        trigger:
+            next:
+                - GetUserIdentityContext_Disable
+        actions:
+            EntraIDAddUserToGroup_Disable:
+                next:
+                    - entra_id___disable_user
+                id: 546f3c0dcd9347d1aa787d30c5444cf1
+                name: Entra ID - Add User to Group
+                properties:
+                    config_id: 00000000000000000000000000000000
+                    json:
+                        '@odata.id': ${GetUserIdentityContext_Disable.UserEntraObjectID}
+                    params:
+                        header:
+                            Content-Type: application/json
+                        path:
+                            group-id: 00000000-0000-0000-0000-000000000000
+            GetUserIdentityContext_Disable:
+                next:
+                    - PrintDataIdentityInfo_Disable
+                id: 19c7e2af0a24f468be7797fe180c8329
+                name: Get user identity context - Disable
+                properties:
+                    continue_if_entity_not_found: true
+                    username: ${data['ReadCSVFile.results.#.UserName']}
+                version_constraint: ~1
+            PrintDataIdentityInfo_Disable:
+                next:
+                    - EntraIDAddUserToGroup_Disable
+                id: aadbf530e35fc452a032f5f8acaaac2a
+                name: Print data - Enhanced AD Discovery Info
+                properties:
+                    text_data: 'Enhanced AD Discovery: User ${data[''ReadCSVFile.results.#''].UserName} - Attributes: ${GetUserIdentityContext_Disable.Attributes} - Entra Object ID: ${GetUserIdentityContext_Disable.UserEntraObjectID}'
+                version_constraint: ~1
+            entra_id___disable_user:
+                next:
+                    - entra_id___revoke_existing_refresh_tokens
+                id: f87630c1df8f419a8a0f351e83677995
+                name: Entra ID - Disable User
+                properties:
+                    config_id: 00000000000000000000000000000000
+                    json:
+                        accountEnabled: false
+                    params:
+                        header:
+                            Content-Type: application/json
+                        path:
+                            entra-user-id: ${data['ReadCSVFile.results.#'].UPN}
+            entra_id___revoke_existing_refresh_tokens:
+                next:
+                    - entra_id___revoke_existing_sign_in_sessions
+                id: d7c8cbb826be43b0bca8f2e767f2015c
+                name: Entra ID - Revoke Existing Refresh Tokens
+                properties:
+                    config_id: 00000000000000000000000000000000
+                    params:
+                        path:
+                            entra-user-id: ${data['ReadCSVFile.results.#'].UPN}
+            entra_id___revoke_existing_sign_in_sessions:
+                next:
+                    - write_to_log_repo_disable
+                id: d4b6533496af4d9594b28ea3185755b4
+                name: Entra ID - Revoke Existing Sign-in Sessions
+                properties:
+                    config_id: 00000000000000000000000000000000
+                    params:
+                        header:
+                            Content-Type: application/json
+                        path:
+                            entra-user-id: ${data['ReadCSVFile.results.#'].UPN}
+            write_to_log_repo_disable:
+                id: 04c59ceb6dff9e6cd89e5f5cf13121ab
+                name: Write to log repo - Enhanced AD Discovery
+                properties:
+                    _fields:
+                        - ${actionSelector}
+                        - ${data['ReadCSVFile.results.#'].UPN}
+                        - ${data['ReadCSVFile.results.#'].UserName}
+                        - ${data['ReadCSVFile.results.#'].ComputerName}
+                        - ${GetUserIdentityContext_Disable.UserEntraObjectID}
+                        - ${GetUserIdentityContext_Disable.Attributes}
+                        - Enhanced AD Discovery
+                        - ${Workflow.Execution.ID}
+                        - ${Workflow.Definition.Name}
+                    remove_action_prefix: true
+                version_constraint: ~1
+    ProcessAllUsers_Enable:
+        display: For each user from CSV; Enhanced AD Discovery - Re-enable users
+        name: For each user from CSV; Enhanced AD Discovery - Re-enable users
+        next:
+            - SendEnableEmail
+        for:
+            input: ReadCSVFile.results
+            continue_on_partial_execution: true
+            sequential: false
+        trigger:
+            next:
+                - GetUserIdentityContext_Enable
+        actions:
+            EntraIDRemoveUserFromGroup_Enable:
+                next:
+                    - entra_id___enable_user
+                id: 6c9ae1276ba24aedaf972e4352887da8
+                name: Entra ID - Remove User from Group
+                properties:
+                    config_id: 00000000000000000000000000000000
+                    params:
+                        path:
+                            id: 00000000-0000-0000-0000-000000000000
+                            user-id: ${GetUserIdentityContext_Enable.UserEntraObjectID}
+            GetUserIdentityContext_Enable:
+                next:
+                    - PrintDataIdentityInfo_Enable
+                id: 19c7e2af0a24f468be7797fe180c8329
+                name: Get user identity context - Enable
+                properties:
+                    continue_if_entity_not_found: true
+                    username: ${data['ReadCSVFile.results.#.UserName']}
+                version_constraint: ~1
+            PrintDataIdentityInfo_Enable:
+                next:
+                    - EntraIDRemoveUserFromGroup_Enable
+                id: aadbf530e35fc452a032f5f8acaaac2a
+                name: Print data - Enhanced AD Discovery Info
+                properties:
+                    text_data: 'Enhanced AD Discovery: User ${data[''ReadCSVFile.results.#''].UserName} - Attributes: ${GetUserIdentityContext_Enable.Attributes} - Entra Object ID: ${GetUserIdentityContext_Enable.UserEntraObjectID}'
+                version_constraint: ~1
+            entra_id___enable_user:
+                next:
+                    - write_to_log_repo_enable
+                id: c764e8920af241178bdc8fa6dab24f0c
+                name: Entra ID - Enable User
+                properties:
+                    config_id: 00000000000000000000000000000000
+                    json:
+                        accountEnabled: true
+                    params:
+                        header:
+                            Content-Type: application/json
+                        path:
+                            entra-user-id: ${data['ReadCSVFile.results.#'].UPN}
+            write_to_log_repo_enable:
+                id: 04c59ceb6dff9e6cd89e5f5cf13121ab
+                name: Write to log repo - Enhanced AD Discovery
+                properties:
+                    _fields:
+                        - ${actionSelector}
+                        - ${data['ReadCSVFile.results.#'].UPN}
+                        - ${data['ReadCSVFile.results.#'].UserName}
+                        - ${data['ReadCSVFile.results.#'].ComputerName}
+                        - ${GetUserIdentityContext_Enable.UserEntraObjectID}
+                        - ${GetUserIdentityContext_Enable.Attributes}
+                        - Enhanced AD Discovery
+                        - ${Workflow.Execution.ID}
+                        - ${Workflow.Definition.Name}
+                    remove_action_prefix: true
+                version_constraint: ~1
+output_fields:
+    - ReadCSVFile.event_count
+    - csv_filename
+    - actionSelector
+    - Workflow.Definition.Name
+    - Workflow.Execution.Time
+    - Workflow.Execution.ID

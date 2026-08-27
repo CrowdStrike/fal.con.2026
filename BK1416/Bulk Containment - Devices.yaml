@@ -1,0 +1,330 @@
+# This is an exported workflow. Editing this file is not recommended.
+
+name: Bulk Processing Machines
+description: Enhanced device containment workflow that reads device data from Discovery CSV output, contains workstation devices (excludes servers), and provides detailed execution summary with individual device tracking. Features hardcoded email distribution with ad-hoc recipient support.
+trigger:
+    next:
+        - GetLookupFileMetadata
+    name: On demand
+    parameters:
+        properties:
+            actionSelector:
+                enum:
+                    - Contain Devices
+                    - Release from Containment
+                type: string
+                title: Action to Perform
+                description: Choose whether to contain devices or release them from containment
+            additional_emails:
+                type: string
+                title: Additional Email Recipients
+                description: Optional additional email address to receive notifications (single email only)
+                default: ""
+            csv_filename:
+                pattern: ^.+\.csv$
+                type: string
+                title: CSV Filename
+                description: Name of the CSV file containing device information from Discovery workflow (e.g., Bulk_Discovery_YYYYMMDD_HHMMSS.csv)
+                default: Bulk_Discovery_20251124_025608.csv
+        required:
+            - csv_filename
+            - actionSelector
+        type: object
+    type: On demand
+actions:
+    GetLookupFileMetadata:
+        next:
+            - lookup_file_exists_is_equal_to_true
+        id: ace50afa2ea8438162f098b621f790fb
+        name: Get lookup file metadata
+        properties:
+            lookup_file_name: ${data['csv_filename']}
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    PrintData3:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        name: Print data - 3
+        properties:
+            text_data: ${data['GetLookupFileMetadata.lookup_file_name']} does not exist
+        version_constraint: ~1
+    ReadCSVFile:
+        next:
+            - devices_found___proceed_with_operations
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        class: Inline.QueryEvent
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    csv_filename:
+                        type: string
+                        title: CSV Filename
+                        default: Bulk_Discovery_20251124_025608.csv
+                required:
+                    - csv_filename
+                type: object
+                description: CSV filename parameter
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    ComputerName:
+                        type: string
+                        title: ComputerName
+                    DeviceType:
+                        type: string
+                        title: DeviceType
+                    LoginContext:
+                        type: string
+                        title: LoginContext
+                    LogonDomain:
+                        type: string
+                        title: LogonDomain
+                    UPN:
+                        type: string
+                        title: UPN
+                    UserName:
+                        type: string
+                        title: UserName
+                    aid:
+                        type: string
+                        title: Aid
+                    event_platform:
+                        type: string
+                        title: Event Platform
+                    latest_login_time:
+                        type: string
+                        title: Latest login time
+                required:
+                    - ComputerName
+                    - DeviceType
+                    - UserName
+                    - aid
+                type: object
+                description: Device containment query results with platform information
+            config:
+                description: Read CSV file containing device information using readfile syntax (max 500 devices)
+                end: now
+                last_modified_by: 00000000-0000-0000-0000-000000000000
+                last_modified_by_user:
+                    email: soc.engineer@acme.com
+                repo_or_view: search-all
+                search_name: Read Device CSV File for Containment
+                search_query: |-
+                    readfile(?csv_filename)
+                    | DeviceType = "Workstation"
+                    | aid != ""
+                    | aid != null
+                    | ComputerName != ""
+                    | ComputerName != null
+                    | head(500)
+                search_query_args:
+                    csv_filename: ${data['csv_filename']}
+                start: 1h
+                tags:
+                    - csv-read
+                    - device-containment
+                    - workstation-filter
+        name: Workflow-specific event query
+        properties:
+            csv_filename: ${data['csv_filename']}
+            output_files_only: false
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: true
+        version_constraint: ~1
+    SendContainmentEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 6
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            file_attachment: ${ReadCSVFile.file_csv}
+            msg: |-
+                Bulk Processing Machines - Execution Complete
+
+                EXECUTION SUMMARY:
+                • CSV File: ${data['csv_filename']}
+                • Action: Contain Devices
+                • Workstation Devices: ${ReadCSVFile.event_count} devices identified and targeted
+                • Commands Issued: Containment commands issued to all ${ReadCSVFile.event_count} devices
+                • Execution Time: ${Workflow.Execution.Time}
+
+                MANUAL VERIFICATION:
+                To verify specific device status in Falcon Console:
+                1. Falcon Console > Host Management
+                2. Search for device by hostname/user
+                3. Check "Status" column:
+                   - "contained" = Successfully contained
+                   - "containment_pending" = Containment in progress
+                   - "normal" = Not contained
+
+                Complete device list attached as CSV file.
+            msg_type: text
+            skip_workflow_header: false
+            subject: Bulk Processing Machines - ${ReadCSVFile.event_count} Devices Targeted
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    SendEmail5:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 5
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            msg: ${data['GetLookupFileMetadata.lookup_file_name']} doesn't exist
+            msg_type: text
+            subject: Bulk Processing Machines - Lookup File Doesn't Exist
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    SendNoDevicesEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 7
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            msg: |-
+                Bulk Processing Machines Workflow - No Devices Found
+
+                Workflow: ${data['csv_filename']} device operations
+
+                ERROR: No workstation devices found in CSV file.
+
+                Troubleshooting:
+                1. Verify CSV file exists: ${data['csv_filename']}
+                2. Check CSV contains DeviceType = "Workstation" entries
+                3. Ensure aid and ComputerName columns are populated
+                4. Confirm CSV was generated by Discovery workflow
+
+                Generated: ${cs.timestamp.format(cs.timestamp.now(), "2006-01-02 15:04:05 MST", "America/New_York")}
+            msg_type: text
+            subject: 'Bulk Processing Machines No Devices: ${data[''csv_filename'']} - 0 workstations found'
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+    SendReleaseEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - 4
+        properties:
+            _fields:
+                - ${Workflow.Execution.ID}
+            file_attachment: ${ReadCSVFile.file_csv}
+            msg: |-
+                CrowdStrike Bulk Device Release - Execution Complete
+
+                EXECUTION SUMMARY:
+                • CSV File: ${data['csv_filename']}
+                • Action: Release from Containment
+                • Workstation Devices: ${ReadCSVFile.event_count} devices identified and targeted
+                • Commands Issued: Release commands issued to all ${ReadCSVFile.event_count} devices
+                • Execution Time: ${Workflow.Execution.Time}
+
+                MANUAL VERIFICATION:
+                To verify specific device status in Falcon Console:
+                1. Falcon Console > Host Management
+                2. Search for device by hostname/user
+                3. Check "Status" column:
+                   - "contained" = Successfully contained
+                   - "containment_pending" = Containment in progress
+                   - "normal" = Not contained (successfully released)
+
+                Complete device list attached as CSV file.
+            msg_type: text
+            skip_workflow_header: false
+            subject: CrowdStrike Bulk Release - ${ReadCSVFile.event_count} Devices Targeted
+            to:
+                - ${Trigger.TriggerSource.User.Email}
+conditions:
+    action_to_perform_is_equal_to_contain_devices:
+        next:
+            - ProcessAllDevices_Contain
+        expression: actionSelector:'Contain Devices'
+        display:
+            - Action to Perform is equal to Contain Devices
+        else_if: action_to_perform_is_equal_to_release_from_containment
+    action_to_perform_is_equal_to_release_from_containment:
+        next:
+            - ProcessAllDevices_Release
+        expression: actionSelector:'Release from Containment'
+        display:
+            - Action to Perform is equal to Release from Containment
+    devices_found___proceed_with_operations:
+        next:
+            - action_to_perform_is_equal_to_contain_devices
+        expression: ReadCSVFile.event_count:>0
+        display:
+            - Devices found - proceed with operations
+        else_if: no_devices_found___send_error_notification
+    lookup_file_exists_is_equal_to_true:
+        next:
+            - ReadCSVFile
+        expression: GetLookupFileMetadata.lookup_file_exists:true
+        display:
+            - Lookup file exists is equal to True
+        else:
+            - PrintData3
+            - SendEmail5
+    no_devices_found___send_error_notification:
+        next:
+            - SendNoDevicesEmail
+        expression: ReadCSVFile.event_count:0
+        display:
+            - No devices found - send error notification
+loops:
+    ProcessAllDevices_Contain:
+        display: For each workstation device from CSV; Contain devices concurrently (max 500)
+        name: For each workstation device from CSV; Contain devices concurrently (max 500)
+        next:
+            - SendContainmentEmail
+        for:
+            input: ReadCSVFile.results
+            continue_on_partial_execution: true
+            sequential: false
+        trigger:
+            next:
+                - LogDevice_Contain
+        actions:
+            ContainDevice:
+                id: bec9fbeb4999d207937854fd56088107
+                name: Contain device
+                properties:
+                    device_id: ${data['ReadCSVFile.results.#'].aid}
+                    note: Bulk containment v30 from CSV - ${data['ReadCSVFile.results.#'].ComputerName} (${data['ReadCSVFile.results.#'].UserName})
+            LogDevice_Contain:
+                next:
+                    - ContainDevice
+                id: aadbf530e35fc452a032f5f8acaaac2a
+                name: Print data
+                properties:
+                    text_data: 'Containment v30: ${data[''ReadCSVFile.results.#''].ComputerName} with AID: ${data[''ReadCSVFile.results.#''].aid} for user: ${data[''ReadCSVFile.results.#''].UserName}'
+                version_constraint: ~1
+    ProcessAllDevices_Release:
+        display: For each workstation device from CSV; Release devices from containment concurrently (max 500)
+        name: For each workstation device from CSV; Release devices from containment concurrently (max 500)
+        next:
+            - SendReleaseEmail
+        for:
+            input: ReadCSVFile.results
+            continue_on_partial_execution: true
+            sequential: false
+        trigger:
+            next:
+                - LogDevice_Release
+        actions:
+            LogDevice_Release:
+                next:
+                    - ReleaseDevice
+                id: aadbf530e35fc452a032f5f8acaaac2a
+                name: Print data
+                properties:
+                    text_data: 'Release v30: ${data[''ReadCSVFile.results.#''].ComputerName} with AID: ${data[''ReadCSVFile.results.#''].aid} for user: ${data[''ReadCSVFile.results.#''].UserName}'
+                version_constraint: ~1
+            ReleaseDevice:
+                id: bec9fbeb4999d207937854fd56088107
+                name: Release device from containment
+                properties:
+                    action: lift_containment
+                    device_id: ${data['ReadCSVFile.results.#'].aid}
+                    note: Bulk release v30 from CSV - ${data['ReadCSVFile.results.#'].ComputerName} (${data['ReadCSVFile.results.#'].UserName})
+output_fields:
+    - ReadCSVFile.event_count
+    - csv_filename
+    - actionSelector
+    - Workflow.Definition.Name
+    - Workflow.Execution.Time

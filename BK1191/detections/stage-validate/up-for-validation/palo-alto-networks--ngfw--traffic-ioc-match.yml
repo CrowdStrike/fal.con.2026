@@ -1,0 +1,40 @@
+# Detection Rule Template (Converted from NGSIEM Saved Search)
+# Original: stage-review-Palo Alto Networks - NGFW - Traffic IOC Match
+# Converted: 2026-07-16T14:40:32.869599
+
+id: "30a34582-b77a-43f7-8610-98428b4e0f2c"
+created_timestamp: "2026-07-16T14:40:32.869312Z"
+modified_timestamp: "2026-07-16T14:40:32.869314Z"
+vendor: "palo-alto"
+severity: medium
+state: tuning
+name: PALO-ALTO-NETWORKS--NGFW--TRAFFIC-IOC-MATCH
+alert_type: detection
+
+context:
+  description: "This rule identifies suspicious activity patterns based on palo alto networks  ngfw  traffic ioc match"
+  reference_urls: []
+  notes: "Converted from NGSIEM saved search: stage-review-Palo Alto Networks - NGFW - Traffic IOC Match"
+  related: []
+
+mitre:
+  tactic: ""
+  technique: ""
+
+rule:
+  tunable: true
+  schedule:
+    ingest_ts: false
+    cron: "@every 1h"
+    lookback: 75m
+  parser: ["unknown"]
+  required_fields: []
+  logic: |-
+    
+  unit_tests: []
+
+conversion_metadata:
+  original_saved_search_id: "Hm4dvi23p7QIHGewxgqIIOHR58WeiDYE"
+  original_name: "stage-review-Palo Alto Networks - NGFW - Traffic IOC Match"
+  converted_at: "2026-07-16T14:40:32.869316Z"
+  conversion_script: "saved_search_to_rule_converter.py"

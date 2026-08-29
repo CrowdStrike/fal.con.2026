@@ -1,0 +1,79 @@
+{
+  "resources": [
+    {
+      "id": "075961842d4a47d484d1c29764482425",
+      "type": "correlation",
+      "name": "Microsoft - Azure - Arc Connection Added via New Machine",
+      "description": "A new connection was created in Azure Arc that allows remote access to an Azure tenant. These types of connections could be used as a backdoor for a threat actor to maintain access in your environment.\n",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "TA0001",
+      "technique": "T1199",
+      "mitre_attack": [
+        {
+          "tactic_id": "TA0001",
+          "technique_id": "T1199"
+        }
+      ],
+      "severity": 10,
+      "search": {
+        "outcome": "detection",
+        "filter": "#Vendor=\"microsoft\" #event.module=\"azure\" #event.dataset=\"azure.activity\" #repo!=\"xdr*\"\n| #event.outcome=\"success\"\n| event.action=\"MICROSOFT.HYBRIDCOMPUTE/MACHINES/WRITE\"\n",
+        "lookback": "1h10m",
+        "trigger_mode": "summary",
+        "execution_mode": "scheduled",
+        "use_ingest_time": false
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 1h0m"
+        },
+        "start_on": "2025-12-09T22:45:00Z"
+      },
+      "api_client_id": "",
+      "user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "user_id": "demo.user1@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "updated_by_user_id": "demo.user1@company.com",
+      "last_updated_on": "2026-01-30T17:44:31.918308Z",
+      "created_on": "2025-12-09T22:15:22.90961Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "baf3b7d8-3e43-401e-85ad-057f19d48690",
+      "rule_id": "075961842d4a47d484d1c29764482425",
+      "executor_rule_id": "075961842d4a47d484d1c29764482425",
+      "state": "unpublished",
+      "version": 1,
+      "next_execution_on": "2026-07-23T03:45:00Z",
+      "last_execution": {
+        "result_metadata": {
+          "execution_start": "2026-07-23T02:46:33.003268806Z",
+          "execution_finish": "2026-07-23T02:46:33.361947849Z",
+          "search_window_end": "2026-07-23T02:45:00Z",
+          "result_count": 0,
+          "execution_duration": 358,
+          "use_ingest_time": false
+        }
+      },
+      "notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "demo.user1@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "attach_report": "false",
+            "send_on_failure": "always",
+            "send_on_success": "never"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "resources": [
+    {
+      "id": "019f5cd1e18f77b8bd8179cfe02ae635",
+      "type": "correlation",
+      "name": "<studentid>-Palo Alto Networks - NGFW - Traffic IOC Match-MEISGN ",
+      "description": "This is a custom MEISGN detection. This rule identifies activity within Palo Alto Networks Next-Generation Firewall traffic logs where the source or destination IP address is flagged as malicious by CrowdStrike's threat intelligence feed, indicating a potential malicious activity. By default, this rule triggers on IOC matches for all outbound traffic (both allowed and blocked) and for allowed inbound traffic (blocked inbound traffic is excluded). By default, an IOC confidence level threshold of \u201chigh\u201d is being used, meaning that IOC has been associated with malicious activity within the last 60 days. Adjust the confidence level threshold as necessary. For more information about ioc:lookup() function, see https://docs.example.com/functions-reference.",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "TA0011",
+      "technique": "T1071",
+      "mitre_attack": [
+        {
+          "tactic_id": "TA0011",
+          "technique_id": "T1071"
+        }
+      ],
+      "severity": 50,
+      "search": {
+        "outcome": "detection",
+        "filter": "// RULE NAME: Palo Alto Networks - NGFW - Traffic IOC Match\n\n// ============================================================\n// SECTION 1: Log Source Fields (tagged fields for filtering - improves performance)\n// ============================================================\n\n#repo!=\"xdr*\"\n| lab.source = *studentid* #Vendor=\"paloalto\" \n(#event.dataset=\"ngfw.traffic\" OR #event.dataset=\"ngfw.traffic\") \n\n// ============================================================\n// SECTION 2: CPS Category Fields (tagged fields for filtering - improves performance)\n// ============================================================\n\n// ============================================================\n// SECTION 3: Query Target (specific logic core to use case)\n// ============================================================\n\n| case {\n    //Inbound Traffic\n    cidr(destination.ip, subnet=[\"10.0.0.0/8\", \"172.16.0.0/12\", \"192.168.0.0/16\", \"fe80::/10\", \"169.254.0.0/16\"])\n    | !cidr(source.ip, subnet=[\"10.0.0.0/8\", \"172.16.0.0/12\", \"192.168.0.0/16\", \"fe80::/10\", \"169.254.0.0/16\"])\n    | direction := \"Inbound\"\n    ;    \n    //Outbound Traffic\n    !cidr(destination.ip, subnet=[\"10.0.0.0/8\", \"172.16.0.0/12\", \"192.168.0.0/16\", \"fe80::/10\", \"169.254.0.0/16\"])\n    | cidr(source.ip, subnet=[\"10.0.0.0/8\", \"172.16.0.0/12\", \"192.168.0.0/16\", \"fe80::/10\", \"169.254.0.0/16\"])\n    | direction := \"Outbound\"\n    ;\n    *\n}\n| case {\n    direction=\"Inbound\"\n    | Vendor.action=allow\n    ;    \n    direction=\"Outbound\"\n    | Vendor.action=*\n}\n| ioc:lookup(field=[source.ip], type=\"ip_address\", include=[\"malicious_confidence\", \"labels\"])\n| ioc:lookup(field=[destination.ip], type=\"ip_address\", include=[\"malicious_confidence\", \"labels\"])\n\n// ============================================================\n// SECTION 4: Aggregation / Grouping (if needed)\n// ============================================================\n\n// ============================================================\n// SECTION 5: Exclusions + Threshold Filtering\n// ============================================================\n| ioc.detected=true\n\n// ============================================================\n// SECTION 6: Rule Notes\n// ============================================================\n",
+        "lookback": "",
+        "trigger_mode": "verbose",
+        "execution_mode": "real_time",
+        "use_ingest_time": true
+      },
+      "operation": {
+        "suppression": {
+          "suppression_period": "5m",
+          "filter": {
+            "field_based": {
+              "field": "source.ip, destination.ip"
+            }
+          }
+        }
+      },
+      "api_client_id": "",
+      "user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "user_id": "demo.user1@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "updated_by_user_id": "demo.user1@company.com",
+      "last_updated_on": "2026-07-13T18:51:26.991883Z",
+      "created_on": "2026-07-13T18:51:26.479169Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "019f5cd1e18f77b8bd8179cfe02ae635",
+      "executor_rule_id": "x6Xp6c9ssP91kZt4b1Riq3qHbzGs5fd6",
+      "state": "published",
+      "version": 1,
+      "last_execution": {
+        "result_metadata": {}
+      }
+    }
+  ]
+}

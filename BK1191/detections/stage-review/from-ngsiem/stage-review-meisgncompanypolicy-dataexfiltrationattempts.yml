@@ -1,0 +1,39 @@
+# Detection Rule Template (Generated from NGSIEM Stage-Review)
+# Original Query: stage-review-MEISGN Company Policy - Data Exfiltration Attempts
+# Generated: 2026-07-15T00:17:40.934113
+
+id: 91cce780-2304-4559-b5b7-17ef44b020ce
+created_timestamp: 2026-07-15T00:17:40.933348Z
+modified_timestamp: 2026-07-15T00:17:40.933370Z
+jira_issue: DETECT-1191
+vendor: stage
+severity: medium
+state: tuning
+tlp: green
+name: MEISGN Company Policy - Data Exfiltration Attempts
+alert_type: detection
+context:
+  description: Detection rule from NGSIEM: stage-review-MEISGN Company Policy - Data Exfiltration Attempts
+  reference_urls: []
+  notes: Original NGSIEM saved query imported from stage-review pipeline
+  killbook: 
+  related: []
+mitre:
+  tactic: 
+  technique: 
+rule:
+  tunable: True
+  schedule:
+    ingest_ts: False
+    cron: @every 1h
+    lookback: 75m
+  parser: ["stage"]
+  required_fields: []
+  logic: // RULE NAME: MEISGN Company Policy - Data Exfiltration Attempts
+
+  unit_tests: []
+ngsiem_source:
+  original_id: qzDKx52jMbNR5gphHCiPPdAaILmczvKd
+  original_name: stage-review-MEISGN Company Policy - Data Exfiltration Attempts
+  imported_at: 2026-07-15T00:17:40.933388Z
+  api_endpoint: https://api.example.com

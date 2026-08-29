@@ -1,0 +1,62 @@
+{
+  "resources": [
+    {
+      "id": "019c6c5fea5570debb7cb9eb9e22c849",
+      "type": "correlation",
+      "name": "testing",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "",
+      "technique": "",
+      "mitre_attack": [],
+      "severity": 50,
+      "search": {
+        "outcome": "detection",
+        "filter": "testing\n/*\n  Atlas:\n    id: PR_REC_0001\n    state: testing\n    business_driver: []\n    threat:\n      type: eCrime\n      tag: []\n    killchain:\n      phase: Prepare\n      stage: Reconnaissance\n    behaviour: []\n    mitre_attack: ''\n    data:\n      type: []\n      source: []\n    context_array:\n    - test\n*/\n| Atlas.id := \"PR_REC_0001\"\n| Atlas.state := \"testing\"\n| Atlas.threat.type := \"eCrime\"\n| Atlas.killchain.phase := \"Prepare\"\n| Atlas.killchain.stage := \"Reconnaissance\"\n| Atlas.mitre_attack := \"\"\n| array:append(values=\"test\", array=\"Atlas.context_array[]\")",
+        "lookback": "1h0m",
+        "trigger_mode": "verbose",
+        "execution_mode": "scheduled",
+        "use_ingest_time": true
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 1h0m"
+        },
+        "start_on": "2026-02-17T16:45:00Z"
+      },
+      "api_client_id": "",
+      "user_uuid": "88f63c12-c271-4100-b178-b75e150efe35",
+      "user_id": "demo.user2@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "88f63c12-c271-4100-b178-b75e150efe35",
+      "updated_by_user_id": "demo.user2@company.com",
+      "last_updated_on": "2026-03-02T12:38:07.951188Z",
+      "created_on": "2026-02-17T16:12:31.189791Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "019c6c5fea5570debb7cb9eb9e22c849",
+      "executor_rule_id": "d80ed415ab9744b9ab576f2195341b81",
+      "state": "unpublished",
+      "version": 1,
+      "notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "demo.user2@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "attach_report": "false",
+            "send_on_failure": "always",
+            "send_on_success": "never"
+          }
+        }
+      ]
+    }
+  ]
+}

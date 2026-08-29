@@ -1,0 +1,96 @@
+{
+  "resources": [
+    {
+      "id": "019f5d27a13277559568a170f92b6031",
+      "type": "correlation",
+      "name": "<studentid>-MEISGN Company Policy - Data Exfiltration Attempts-MEISGN ",
+      "description": "This is a custom MEISGN detection. Detects repeated data exfiltration attempts against high-value user accounts, alerting when the attempt count exceeds the defined threshold.",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "TA0010",
+      "technique": "T1011",
+      "mitre_attack": [
+        {
+          "tactic_id": "TA0010",
+          "technique_id": "T1011"
+        }
+      ],
+      "severity": 90,
+      "search": {
+        "outcome": "detection",
+        "filter": "// RULE NAME: MEISGN Company Policy - Data Exfiltration Attempts\n\n// ============================================================\n// SECTION 1: Log Source Fields (tagged fields for filtering - improves performance)\n// ============================================================\n| #Vendor = octan \n| lab.source = \"<studentid>-octan\" \n\n// ============================================================\n// SECTION 2: CPS Category Fields (tagged fields for filtering - improves performance)\n// ============================================================\n| #event.dataset = firewall.network\n| #event.kind = alert\n| #event.module = firewall\n| #event.outcome = failure\n| event.category[0] = network\n| event.reason = \"Data exfiltration attempt detected\"\n\n// ============================================================\n// SECTION 3: Query Target (specific logic core to use case)\n// ============================================================\n// Filter for VIP users only\n| user.id = \"jsmith\" OR user.id = \"janedoe\"\n\n// Filter for Data exfiltration message\n| message = \"Data exfiltration attempt detected\"\n\n// ============================================================\n// SECTION 4: Aggregation / Grouping (if needed)\n// ============================================================\n| groupBy([user.id], function=[\n  count(as=total_exfil_attempts),\n  collect(rule.name, Vendor.device_name, source.port, destination.port, limit=10)\n])\n\n// ============================================================\n// SECTION 5: Exclusions + Threshold Filtering\n// ============================================================\n| \"total_exfil_attempts\" > 3\n\n// ============================================================\n// SECTION 6: Rule Notes\n// ============================================================",
+        "lookback": "1h5m",
+        "trigger_mode": "verbose",
+        "execution_mode": "scheduled",
+        "use_ingest_time": true
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 1h0m"
+        },
+        "start_on": "2026-07-13T20:45:00Z"
+      },
+      "api_client_id": "",
+      "user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "user_id": "demo.user1@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "updated_by_user_id": "demo.user1@company.com",
+      "last_updated_on": "2026-07-13T20:25:07.742378Z",
+      "created_on": "2026-07-13T20:25:06.098725Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "019f5d27a13277559568a170f92b6031",
+      "executor_rule_id": "fc9fb2b422494900958349c29c52d0b8",
+      "state": "published",
+      "version": 1,
+      "next_execution_on": "2026-07-23T03:45:00Z",
+      "last_execution": {
+        "result_metadata": {
+          "execution_start": "2026-07-23T02:45:48.119410715Z",
+          "execution_finish": "2026-07-23T02:45:48.934076732Z",
+          "search_window_end": "2026-07-23T02:45:00Z",
+          "result_count": 0,
+          "execution_duration": 814,
+          "use_ingest_time": true
+        }
+      },
+      "notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "secops.team@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "attach_report": "false",
+            "send_on_failure": "always",
+            "send_on_success": "never"
+          }
+        }
+      ],
+      "guardrail_notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "secops.team@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "is_guardrail_notification": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "resources": [
+    {
+      "id": "019f5d0d952d7a4ea1711cc108514405",
+      "type": "correlation",
+      "name": "<studentid>-Zscaler - ZIA - Super Admin Account Created-MEISGN ",
+      "description": "This is a custom MEISGN detection. Detects when a super user account is created on the native console of the Zscaler ZIA Admin Portal, potentially indicating a security risk or unauthorized access.",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "TA0003",
+      "technique": "T1136",
+      "mitre_attack": [
+        {
+          "tactic_id": "TA0003",
+          "technique_id": "T1136"
+        }
+      ],
+      "severity": 70,
+      "search": {
+        "outcome": "detection",
+        "filter": "// RULE NAME: Zscaler - ZIA - Super Admin Account Created\n\n// ============================================================\n// SECTION 1: Log Source Fields (tagged fields for filtering - improves performance)\n// ============================================================\n| #Vendor=\"zscaler\" #event.module=\"zia\" #repo!=\"xdr*\"\n\n// ============================================================\n// SECTION 2: CPS Category Fields (tagged fields for filtering - improves performance)\n// ============================================================\n| #event.kind=\"event\" \n| event.action=\"CREATE\"\n| #event.outcome=\"success\"\n\n// ============================================================\n// SECTION 3: Query Target (specific logic core to use case)\n// ============================================================\n| Vendor.preaction.role.name=\"Super Admin\"\n\n// ============================================================\n// SECTION 4: Aggregation / Grouping (if needed)\n// ============================================================\n\n// ============================================================\n// SECTION 5: Exclusions + Threshold Filtering\n// ============================================================\n\n// ============================================================\n// SECTION 6: Rule Notes\n// ============================================================\n",
+        "lookback": "",
+        "trigger_mode": "verbose",
+        "execution_mode": "real_time",
+        "use_ingest_time": true
+      },
+      "operation": {
+        "suppression": {
+          "suppression_period": "5m",
+          "filter": {
+            "field_based": {
+              "field": "user.name"
+            }
+          }
+        }
+      },
+      "api_client_id": "",
+      "user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "user_id": "demo.user1@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "updated_by_user_id": "demo.user1@company.com",
+      "last_updated_on": "2026-07-13T19:56:39.676443Z",
+      "created_on": "2026-07-13T19:56:39.085167Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "019f5d0d952d7a4ea1711cc108514405",
+      "executor_rule_id": "OtLv09pnnLiyNWH8fcBxmZMdMgMvCGDe",
+      "state": "published",
+      "version": 1,
+      "last_execution": {
+        "result_metadata": {}
+      }
+    }
+  ]
+}

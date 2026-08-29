@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-07-14T20:58:26.804022",
+  "demo_mode": true,
+  "stage_review_searches": [
+    {
+      "id": "search_001",
+      "name": "OKTA-ADMIN-PRIVILEGE-ESCALATION-stage-review",
+      "query_string": "| #repo=\"okta_logs\" #Vendor=\"okta\" | event.action=\"user.account.privilege.grant\" | target.displayName =~ regex(regex=\".*Admin.*\")",
+      "description": "Detects when administrative privileges are granted in Okta. TA0004 - Privilege Escalation, T1078 - Valid Accounts",
+      "owner": "demo.user1@company.com",
+      "created_at": "2026-07-10T10:00:00Z",
+      "modified_at": "2026-07-14T15:30:00Z",
+      "repository": "okta_security_logs",
+      "labels": [
+        "security",
+        "iam",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "id": "search_002",
+      "name": "WINDOWS-SUSPICIOUS-PROCESS-EXECUTION-stage-review",
+      "query_string": "| #repo=\"windows_logs\" #Vendor=\"microsoft\" | event.action=\"process_create\" | process.name =~ regex(regex=\".*(cmd|powershell|wscript).*\") | process.parent.name=\"winword.exe\"",
+      "description": "Detects suspicious process execution from Microsoft Office applications. T1566 - Phishing, T1059 - Command and Scripting Interpreter",
+      "owner": "detection.team@company.com",
+      "created_at": "2026-07-12T14:20:00Z",
+      "modified_at": "2026-07-14T16:00:00Z",
+      "repository": "windows_security_logs",
+      "labels": [
+        "malware",
+        "execution",
+        "office"
+      ]
+    }
+  ],
+  "processed_count": 2,
+  "errors": [],
+  "files_created": [
+    "detections/stage-review/from-ngsiem/okta-admin-privilege-escalation-stage-review.json",
+    "detections/stage-review/from-ngsiem/windows-suspicious-process-execution-stage-review.json",
+    "detections/stage-review/from-ngsiem/okta-admin-privilege-escalation-stage-review.yml",
+    "detections/stage-review/from-ngsiem/windows-suspicious-process-execution-stage-review.yml"
+  ]
+}

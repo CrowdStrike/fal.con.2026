@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-07-15T00:17:40.939560",
+  "source": "NGSIEM stage-review queries",
+  "api_endpoint": "https://api.example.com",
+  "total_queries_found": 4,
+  "processed_count": 4,
+  "processed_queries": [
+    {
+      "name": "stage-review-MEISGN Company Policy - Data Exfiltration Attempts",
+      "id": "qzDKx52jMbNR5gphHCiPPdAaILmczvKd",
+      "json_file": "detections/stage-review/from-ngsiem/stage-review-meisgncompanypolicy-dataexfiltrationattempts.json",
+      "yaml_file": "detections/stage-review/from-ngsiem/stage-review-meisgncompanypolicy-dataexfiltrationattempts.yml",
+      "query_content": "// RULE NAME: MEISGN Company Policy - Data Exfiltration Attempts\n"
+    },
+    {
+      "name": "stage-review-Okta-SSO-Failed-Auth-Then-Success-Different-Location",
+      "id": "V26QfkPZImbWg51iaLCjdlMclN3GqSrj",
+      "json_file": "detections/stage-review/from-ngsiem/stage-review-okta-sso-failed-auth-then-success-different-location.json",
+      "yaml_file": "detections/stage-review/from-ngsiem/stage-review-okta-sso-failed-auth-then-success-different-location.yml",
+      "query_content": "// RULE NAME: Okta-SSO-Failed-Auth-Then-Success-Different-Location\n"
+    },
+    {
+      "name": "stage-review-Palo Alto Networks - NGFW - Traffic IOC Match",
+      "id": "Hm4dvi23p7QIHGewxgqIIOHR58WeiDYE",
+      "json_file": "detections/stage-review/from-ngsiem/stage-review-paloaltonetworks-ngfw-trafficiocmatch.json",
+      "yaml_file": "detections/stage-review/from-ngsiem/stage-review-paloaltonetworks-ngfw-trafficiocmatch.yml",
+      "query_content": "|"
+    },
+    {
+      "name": "stage-review-Secure-Access-Suspicious-User-Agent-Combo",
+      "id": "XA2nxnA0Hd7IN0aZ99b0sHxmmZ0YYWFZ",
+      "json_file": "detections/stage-review/from-ngsiem/stage-review-secure-access-suspicious-user-agent-combo.json",
+      "yaml_file": "detections/stage-review/from-ngsiem/stage-review-secure-access-suspicious-user-agent-combo.yml",
+      "query_content": "// RULE NAME: Secure-Access-Suspicious-User-Agent-Combo\n"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,40 @@
+# Detection Rule Template (Converted from NGSIEM Saved Search)
+# Original: WINDOWS-SUSPICIOUS-PROCESS-EXECUTION-stage-review
+# Converted: 2026-07-16T14:40:32.865938
+
+id: "e613c9bb-5e5e-4d48-9c00-091da94c42e4"
+created_timestamp: "2026-07-16T14:40:32.865781Z"
+modified_timestamp: "2026-07-16T14:40:32.865784Z"
+vendor: "windows"
+severity: medium
+state: tuning
+name: WINDOWS-SUSPICIOUS-PROCESS-EXECUTION-STAGE-REVIEW
+alert_type: detection
+
+context:
+  description: "This rule identifies suspicious activity patterns based on windows suspicious process execution stage review"
+  reference_urls: []
+  notes: "Converted from NGSIEM saved search: WINDOWS-SUSPICIOUS-PROCESS-EXECUTION-stage-review"
+  related: []
+
+mitre:
+  tactic: ""
+  technique: ""
+
+rule:
+  tunable: true
+  schedule:
+    ingest_ts: false
+    cron: "@every 1h"
+    lookback: 75m
+  parser: ["unknown"]
+  required_fields: []
+  logic: |-
+    
+  unit_tests: []
+
+conversion_metadata:
+  original_saved_search_id: "search_002"
+  original_name: "WINDOWS-SUSPICIOUS-PROCESS-EXECUTION-stage-review"
+  converted_at: "2026-07-16T14:40:32.865786Z"
+  conversion_script: "saved_search_to_rule_converter.py"

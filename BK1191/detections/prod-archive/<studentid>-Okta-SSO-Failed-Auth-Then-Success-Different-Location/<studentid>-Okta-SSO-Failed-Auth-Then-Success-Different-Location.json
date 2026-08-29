@@ -1,0 +1,100 @@
+{
+  "resources": [
+    {
+      "id": "019f5c8c4a9477b8bf80f9cda99b99b1",
+      "type": "correlation",
+      "name": "<studentid>-Okta-SSO-Failed-Auth-Then-Success-Different-Location",
+      "description": "This is a custom MEISGN detection. This rule uses the correlate() function to detect credential stuffing and brute force attacks by identifying temporal patterns where multiple failed authentication attempts from different geographic locations are followed by a successful login within a 1-hour window.",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "TA0006",
+      "technique": "T1110.003",
+      "mitre_attack": [
+        {
+          "tactic_id": "TA0006",
+          "technique_id": "T1110.003"
+        },
+        {
+          "tactic_id": "TA0006",
+          "technique_id": "T1110"
+        }
+      ],
+      "severity": 70,
+      "search": {
+        "outcome": "detection",
+        "filter": "// RULE NAME: Okta-SSO-Failed-Auth-Then-Success-Different-Location\n\n// ============================================================\n// SECTION 1: Log Source Fields (tagged fields for filtering - improves performance)\n// ============================================================\nlab.source=*studentid*\n| #type=\"studentid-okta-syslog\"\n| #Vendor=\"okta\"\n| #event.module=\"sso\"\n| #event.dataset=\"sso.system\"\n\n// ============================================================\n// SECTION 2: CPS Category Fields (tagged fields for filtering - improves performance)\n// ============================================================\n| #event.kind=\"event\"\n| event.action=\"user.authentication.auth_via_mfa\"\n\n// ============================================================\n// SECTION 3: Query Target (specific logic core to use case)\n// ============================================================\n| correlate(\n    FailedAuth: {\n      #event.outcome=\"failure\"\n    } include: [user.name, client.geo.country_name, client.geo.city_name, source.ip, @timestamp, @id],\n    SuccessAuth: {\n      #event.outcome=\"success\"\n    } include: [user.name, client.geo.country_name, client.geo.city_name, source.ip, @timestamp, @id],\n    globalConstraints=[user.name],\n    sequence=true,\n    within=1h\n  )\n\n// ============================================================\n// SECTION 4: Aggregation / Grouping (if needed)\n// ============================================================\n| groupBy([SuccessAuth.user.name], function=([\n    count(as=total_events),\n    count(FailedAuth.client.geo.country_name, distinct=true, as=failed_country_count),\n    count(FailedAuth.client.geo.city_name, distinct=true, as=failed_city_count),\n    collect([FailedAuth.client.geo.country_name, FailedAuth.client.geo.city_name, FailedAuth.source.ip, SuccessAuth.client.geo.country_name, SuccessAuth.client.geo.city_name, SuccessAuth.source.ip], limit=100)\n  ]))\n\n// ============================================================\n// SECTION 5: Exclusions + Threshold Filtering\n// ============================================================\n// Uncomment and customize exclusions for your environment:\n// | SuccessAuth.user.name != \"service-account@example.com\"\n// | !cidr(SuccessAuth.source.ip, subnet=[\"10.0.0.0/8\", \"172.16.0.0/12\", \"192.168.0.0/16\"])\n//| total_events >= 2\n//| failed_country_count > 1 OR failed_city_count > 1\n\n// ============================================================\n// SECTION 6: Rule Notes\n// ============================================================\n// Description: This is a custom MEISGN detection\n// Outcome: Execution Mode: Scheduled Detection\n// Event Timestamp: Ingested (@ingesttimestamp)\n// Trigger Type: Verbose\n// Severity: High\n// MITRE ATT&CK: TA0006 (Credential Access) / T1110.003 (Brute Force: Password Spraying)\n// Start Date: Please set the next possible scheduling window.\n// End Date:\n// Search Frequency: Run this search every 1 hour.\n// Search Window: Search the last 1 hour.\n// System Notifications: None\n//\n// Detection Logic:\n// This rule uses the correlate() function to detect credential stuffing and brute force attacks\n// by identifying temporal patterns where multiple failed authentication attempts from different\n// geographic locations are followed by a successful login within a 1-hour window.\n//\n// Key Features:\n// - Enforces temporal ordering: failures MUST precede success (sequence=true)\n// - Links events by user.name using globalConstraints\n// - Detects geographic anomalies (multiple countries OR cities)\n// - Collects event IDs (@id) for correlation rule lookups\n// - Minimum threshold: 2+ correlated events from multiple locations\n//\n// Investigation Fields:\n// - SuccessAuth.user.name: Targeted user account\n// - total_events: Number of events in the attack pattern\n// - failed_country_count: Number of unique countries in failed attempts\n// - failed_city_count: Number of unique cities in failed attempts\n// - FailedAuth.client.geo.country_name: Array of failure countries\n// - FailedAuth.client.geo.city_name: Array of failure cities\n// - FailedAuth.source.ip: Array of failure source IPs\n// - SuccessAuth.client.geo.country_name: Success country\n// - SuccessAuth.client.geo.city_name: Success city\n// - SuccessAuth.source.ip: Success source IP\n// - FailedAuth.@id: Event IDs for failed attempts\n// - SuccessAuth.@id: Event ID for successful attempt",
+        "lookback": "1h5m",
+        "trigger_mode": "verbose",
+        "execution_mode": "scheduled",
+        "use_ingest_time": true
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 1h0m"
+        },
+        "start_on": "2026-07-13T18:00:00Z"
+      },
+      "api_client_id": "",
+      "user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "user_id": "demo.user1@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "updated_by_user_id": "demo.user1@company.com",
+      "last_updated_on": "2026-07-13T17:36:50.710231Z",
+      "created_on": "2026-07-13T17:35:25.844367Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "019f5c8c4a9477b8bf80f9cda99b99b1",
+      "executor_rule_id": "da50b861bdee45edaad5a2a7f912c924",
+      "state": "unpublished",
+      "version": 1,
+      "next_execution_on": "2026-07-23T03:00:00Z",
+      "last_execution": {
+        "result_metadata": {
+          "execution_start": "2026-07-23T02:00:27.399726975Z",
+          "execution_finish": "2026-07-23T02:00:28.376613939Z",
+          "search_window_end": "2026-07-23T02:00:00Z",
+          "result_count": 0,
+          "execution_duration": 976,
+          "use_ingest_time": true
+        }
+      },
+      "notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "secops.team@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "attach_report": "false",
+            "send_on_failure": "always",
+            "send_on_success": "never"
+          }
+        }
+      ],
+      "guardrail_notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "secops.team@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "is_guardrail_notification": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

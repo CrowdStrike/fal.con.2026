@@ -1,0 +1,63 @@
+{
+  "resources": [
+    {
+      "id": "0a15b8a244ee4a46bba9366da628fb11",
+      "type": "correlation",
+      "name": "SA - Correlation Groupby Verbose 3 - SelectLast",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "",
+      "technique": "",
+      "mitre_attack": [],
+      "severity": 50,
+      "search": {
+        "outcome": "detection",
+        "filter": "#repo!= \"xdr_indicatorsrepo\"\n| in(#Vendor, values=[\"linux\",\"microsoft\"])\n| groupBy([#Vendor], function=([count(),selectLast([@id])]))",
+        "lookback": "0h15m",
+        "trigger_mode": "verbose",
+        "execution_mode": "scheduled",
+        "use_ingest_time": true
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 0h15m"
+        },
+        "start_on": "2025-12-16T12:15:00Z"
+      },
+      "api_client_id": "",
+      "user_uuid": "88f63c12-c271-4100-b178-b75e150efe35",
+      "user_id": "demo.user2@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "88f63c12-c271-4100-b178-b75e150efe35",
+      "updated_by_user_id": "demo.user2@company.com",
+      "last_updated_on": "2025-12-16T14:09:28.852322Z",
+      "created_on": "2025-12-16T13:09:34.343803Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "dfb32829900c496abe876522fae05e4e",
+      "executor_rule_id": "dfb32829900c496abe876522fae05e4e",
+      "state": "unpublished",
+      "version": 4,
+      "comment": "rule updated using rules endpoint",
+      "notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "demo.user2@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "attach_report": "false",
+            "send_on_failure": "always",
+            "send_on_success": "never"
+          }
+        }
+      ]
+    }
+  ]
+}

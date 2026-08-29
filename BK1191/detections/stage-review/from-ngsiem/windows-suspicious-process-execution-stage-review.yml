@@ -1,0 +1,32 @@
+# Detection Rule Template (Generated from NGSIEM)
+# Original Search: WINDOWS-SUSPICIOUS-PROCESS-EXECUTION-stage-review
+# Generated: 2026-07-14T20:58:26.803952
+
+id: "e9bd82f4-9b56-4cc8-9ca7-3c75f3c047da"
+created_timestamp: "2026-07-14T20:58:26.803727Z"
+modified_timestamp: "2026-07-14T20:58:26.803729Z"
+jira_issue: "DETECT-1191"
+vendor: "windows"
+severity: medium
+state: tuning
+tlp: green
+name: WINDOWS-SUSPICIOUS-PROCESS-EXECUTION
+alert_type: detection
+
+context:
+  description: "Detects suspicious process execution from Microsoft Office applications. T1566 - Phishing, T1059 - Command and Scripting Interpreter"
+  notes: "Imported from NGSIEM search ID: search_002"
+
+rule:
+  tunable: true
+  schedule:
+    cron: "@every 1h"
+    lookback: "75m"
+  logic: |-
+    | #repo="windows_logs" #Vendor="microsoft" | event.action="process_create" | process.name =~ regex(regex=".*(cmd|powershell|wscript).*") | process.parent.name="winword.exe"
+
+ngsiem_source:
+  original_id: "search_002"
+  repository: "windows_security_logs"
+  owner: "detection.team@company.com"
+  imported_at: "2026-07-14T20:58:26.803734Z"

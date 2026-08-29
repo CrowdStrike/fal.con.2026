@@ -1,0 +1,100 @@
+{
+  "resources": [
+    {
+      "id": "019f5cbdb9c877b8b1148ee682217364",
+      "type": "correlation",
+      "name": "<studentid>-Secure Access - Suspicious User Agent Combo-MEISGN",
+      "description": "This is a custom MEISGN detection. Detects access attempts to secure access applications using suspicious or uncommon user agent combinations that deviate from typical enterprise access patterns. ",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "TA0001",
+      "technique": "T1078.004",
+      "mitre_attack": [
+        {
+          "tactic_id": "TA0001",
+          "technique_id": "T1078.004"
+        },
+        {
+          "tactic_id": "TA0003",
+          "technique_id": "T1078.004"
+        }
+      ],
+      "severity": 50,
+      "search": {
+        "outcome": "detection",
+        "filter": "// RULE NAME: Secure-Access-Suspicious-User-Agent-Combo\n\n// ============================================================\n// SECTION 1: Log Source Fields (tagged fields for filtering - improves performance)\n// ============================================================\nlab.source = *studentid* #type = \"studentid-secure-access-syslog\"\n\n// ============================================================\n// SECTION 2: CPS Category Fields (tagged fields for filtering - improves performance)\n// ============================================================\n| #event.kind=\"event\" #event.outcome=\"success\"\n\n// ============================================================\n// SECTION 3: Query Target (specific logic core to use case)\n// ============================================================\n// Create a user agent combo identifier\n// Create a user agent combo identifier\n| user_agent_combo := format(\"%s on %s\", field=[user_agent.name, user_agent.device.name])\n\n// Flag patterns that are ACTUALLY unusual/suspicious in your data:\n| case {\n    // Generic/Unknown browser or device (could indicate spoofing or automation)\n    user_agent.name = \"Generic\" | anomaly_type := \"Generic/Unknown Browser\";\n    user_agent.device.name = \"Generic\" | anomaly_type := \"Generic/Unknown Device\";\n    \n    // Mobile Safari accessing enterprise apps (less common, could be BYOD risk)\n    user_agent.name = \"Safari\" AND user_agent.device.name = \"Mobile\" | anomaly_type := \"Mobile Safari Access\";\n    \n    // Tablet access (unusual for enterprise work, could be personal device)\n    user_agent.device.name = \"Tablet\" | anomaly_type := \"Tablet Device Access\";\n    \n    // Desktop Safari (uncommon in Windows-heavy enterprises)\n    user_agent.name = \"Safari\" AND user_agent.device.name = \"Desktop\" | anomaly_type := \"Desktop Safari (Mac)\";\n    \n    // Everything else\n    * | anomaly_type := \"Normal Desktop Browser\";\n}\n\n// Show only the anomalous patterns\n| anomaly_type != \"Normal Desktop Browser\"\n\n// ============================================================\n// SECTION 4: Aggregation / Grouping (if needed)\n// ============================================================\n| groupBy([user.name, anomaly_type], function=[\n    count(as=access_count),\n    collect([user_agent_combo, service.name, event.action, source.ip, source.geo.city_name], limit=10)\n  ])\n\n// ============================================================\n// SECTION 5: Exclusions + Threshold Filtering\n// ============================================================\n// Sort by most frequent anomalies\n| sort(access_count, order=desc)\n\n// ============================================================\n// SECTION 6: Rule Notes \n// ============================================================",
+        "lookback": "0h20m",
+        "trigger_mode": "verbose",
+        "execution_mode": "scheduled",
+        "use_ingest_time": true
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 0h15m"
+        },
+        "start_on": "2026-07-13T19:00:00Z"
+      },
+      "api_client_id": "",
+      "user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "user_id": "demo.user1@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "updated_by_user_id": "demo.user1@company.com",
+      "last_updated_on": "2026-07-13T18:29:26.603074Z",
+      "created_on": "2026-07-13T18:29:25.576703Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "019f5cbdb9c877b8b1148ee682217364",
+      "executor_rule_id": "ce361e5f5fb04d239ae711867dca4cb0",
+      "state": "published",
+      "version": 1,
+      "next_execution_on": "2026-07-23T03:00:00Z",
+      "last_execution": {
+        "result_metadata": {
+          "execution_start": "2026-07-23T02:45:49.062219085Z",
+          "execution_finish": "2026-07-23T02:45:49.970472694Z",
+          "search_window_end": "2026-07-23T02:45:00Z",
+          "result_count": 0,
+          "execution_duration": 908,
+          "use_ingest_time": true
+        }
+      },
+      "notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "secops.team@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "attach_report": "false",
+            "send_on_failure": "always",
+            "send_on_success": "never"
+          }
+        }
+      ],
+      "guardrail_notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "secops.team@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "is_guardrail_notification": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

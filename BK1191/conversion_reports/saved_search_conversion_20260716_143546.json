@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-07-16T14:35:46.208831",
+  "total_files_processed": 6,
+  "successful_conversions": 6,
+  "failed_conversions": 0,
+  "converted_rules": [
+    {
+      "original_file": "detections/stage-review/from-ngsiem/okta-admin-privilege-escalation-stage-review.json",
+      "output_file": "detections/up-for-review/okta-admin-privilege-escalation-stage-review.yml",
+      "rule_name": "OKTA-ADMIN-PRIVILEGE-ESCALATION-STAGE-REVIEW",
+      "vendor": "okta",
+      "severity": "medium",
+      "mitre_tactic": "",
+      "mitre_technique": ""
+    },
+    {
+      "original_file": "detections/stage-review/from-ngsiem/windows-suspicious-process-execution-stage-review.json",
+      "output_file": "detections/up-for-review/windows-suspicious-process-execution-stage-review.yml",
+      "rule_name": "WINDOWS-SUSPICIOUS-PROCESS-EXECUTION-STAGE-REVIEW",
+      "vendor": "windows",
+      "severity": "medium",
+      "mitre_tactic": "",
+      "mitre_technique": ""
+    },
+    {
+      "original_file": "detections/stage-review/from-ngsiem/stage-review-okta-sso-failed-auth-then-success-different-location.json",
+      "output_file": "detections/up-for-review/okta-sso-failed-auth-then-success-different-location.yml",
+      "rule_name": "OKTA-SSO-FAILED-AUTH-THEN-SUCCESS-DIFFERENT-LOCATION",
+      "vendor": "okta",
+      "severity": "medium",
+      "mitre_tactic": "",
+      "mitre_technique": ""
+    },
+    {
+      "original_file": "detections/stage-review/from-ngsiem/stage-review-meisgncompanypolicy-dataexfiltrationattempts.json",
+      "output_file": "detections/up-for-review/meisgn-company-policy--data-exfiltration-attempts.yml",
+      "rule_name": "MEISGN-COMPANY-POLICY--DATA-EXFILTRATION-ATTEMPTS",
+      "vendor": "meisgn",
+      "severity": "medium",
+      "mitre_tactic": "",
+      "mitre_technique": ""
+    },
+    {
+      "original_file": "detections/stage-review/from-ngsiem/stage-review-secure-access-suspicious-user-agent-combo.json",
+      "output_file": "detections/up-for-review/secure-access-suspicious-user-agent-combo.yml",
+      "rule_name": "SECURE-ACCESS-SUSPICIOUS-USER-AGENT-COMBO",
+      "vendor": "secure",
+      "severity": "medium",
+      "mitre_tactic": "",
+      "mitre_technique": ""
+    },
+    {
+      "original_file": "detections/stage-review/from-ngsiem/stage-review-paloaltonetworks-ngfw-trafficiocmatch.json",
+      "output_file": "detections/up-for-review/palo-alto-networks--ngfw--traffic-ioc-match.yml",
+      "rule_name": "PALO-ALTO-NETWORKS--NGFW--TRAFFIC-IOC-MATCH",
+      "vendor": "palo-alto",
+      "severity": "medium",
+      "mitre_tactic": "",
+      "mitre_technique": ""
+    }
+  ]
+}

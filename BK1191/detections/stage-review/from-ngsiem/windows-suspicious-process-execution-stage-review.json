@@ -1,0 +1,15 @@
+{
+  "id": "search_002",
+  "name": "WINDOWS-SUSPICIOUS-PROCESS-EXECUTION-stage-review",
+  "query_string": "| #repo=\"windows_logs\" #Vendor=\"microsoft\" | event.action=\"process_create\" | process.name =~ regex(regex=\".*(cmd|powershell|wscript).*\") | process.parent.name=\"winword.exe\"",
+  "description": "Detects suspicious process execution from Microsoft Office applications. T1566 - Phishing, T1059 - Command and Scripting Interpreter",
+  "owner": "detection.team@company.com",
+  "created_at": "2026-07-12T14:20:00Z",
+  "modified_at": "2026-07-14T16:00:00Z",
+  "repository": "windows_security_logs",
+  "labels": [
+    "malware",
+    "execution",
+    "office"
+  ]
+}

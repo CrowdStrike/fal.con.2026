@@ -1,0 +1,32 @@
+# Detection Rule Template (Generated from NGSIEM)
+# Original Search: OKTA-ADMIN-PRIVILEGE-ESCALATION-stage-review
+# Generated: 2026-07-14T20:58:26.803263
+
+id: "7250d8d2-deeb-41d4-af6f-76cf2d72f138"
+created_timestamp: "2026-07-14T20:58:26.803012Z"
+modified_timestamp: "2026-07-14T20:58:26.803023Z"
+jira_issue: "DETECT-1191"
+vendor: "okta"
+severity: medium
+state: tuning
+tlp: green
+name: OKTA-ADMIN-PRIVILEGE-ESCALATION
+alert_type: detection
+
+context:
+  description: "Detects when administrative privileges are granted in Okta. TA0004 - Privilege Escalation, T1078 - Valid Accounts"
+  notes: "Imported from NGSIEM search ID: search_001"
+
+rule:
+  tunable: true
+  schedule:
+    cron: "@every 1h"
+    lookback: "75m"
+  logic: |-
+    | #repo="okta_logs" #Vendor="okta" | event.action="user.account.privilege.grant" | target.displayName =~ regex(regex=".*Admin.*")
+
+ngsiem_source:
+  original_id: "search_001"
+  repository: "okta_security_logs"
+  owner: "demo.user1@company.com"
+  imported_at: "2026-07-14T20:58:26.803029Z"

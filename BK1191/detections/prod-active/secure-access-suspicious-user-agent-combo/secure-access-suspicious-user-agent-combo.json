@@ -1,0 +1,24 @@
+{
+  "resources": [
+    {
+      "name": "secure-access-suspicious-user-agent-combo",
+      "description": "Detection rule: secure-access-suspicious-user-agent-combo",
+      "tactic": "TAXXXX",
+      "technique": "TXXXX",
+      "severity": 0,
+      "search": {
+        "outcome": "detection",
+        "filter": "| #repo=\"<repo>\" #Vendor=\"<vendor>\" #event.module=\"<module>\"\n| <field>=\"<value>\"\n| <additional_logic>\n",
+        "lookback": "1h0m"
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 1h0m"
+        },
+        "start_on": "2026-07-23T03:14:33Z",
+        "stop_on": "2026-07-24T03:14:33Z"
+      },
+      "status": "active"
+    }
+  ]
+}

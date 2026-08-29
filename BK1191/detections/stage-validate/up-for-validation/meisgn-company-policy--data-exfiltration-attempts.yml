@@ -1,0 +1,82 @@
+# Detection Rule Template (Converted from NGSIEM Saved Search)
+# Original: stage-review-MEISGN Company Policy - Data Exfiltration Attempts
+# Converted: 2026-07-16T14:40:32.868159
+
+id: "4e719535-c0ca-435b-928e-d2193b4b1d8e"
+created_timestamp: "2026-07-16T14:40:32.867595Z"
+modified_timestamp: "2026-07-16T14:40:32.867597Z"
+vendor: "meisgn"
+severity: medium
+state: tuning
+name: MEISGN-COMPANY-POLICY--DATA-EXFILTRATION-ATTEMPTS
+alert_type: detection
+
+context:
+  description: "This rule identifies suspicious activity patterns based on meisgn company policy  data exfiltration attempts"
+  reference_urls: []
+  notes: "Converted from NGSIEM saved search: stage-review-MEISGN Company Policy - Data Exfiltration Attempts"
+  related: []
+
+mitre:
+  tactic: ""
+  technique: ""
+
+rule:
+  tunable: true
+  schedule:
+    ingest_ts: false
+    cron: "@every 1h"
+    lookback: 75m
+  parser: ["octan", "firewall"]
+  required_fields: ["user.id", "event.outcome"]
+  logic: |-
+    // RULE NAME: MEISGN Company Policy - Data Exfiltration Attempts
+    
+    // ============================================================
+    // SECTION 1: Log Source Fields (tagged fields for filtering - improves performance)
+    // ============================================================
+    | #Vendor = octan
+    | lab.source = "<studentid>-octan"
+    
+    // ============================================================
+    // SECTION 2: CPS Category Fields (tagged fields for filtering - improves performance)
+    // ============================================================
+    | #event.dataset = firewall.network
+    | #event.kind = alert
+    | #event.module = firewall
+    | #event.outcome = failure
+    | event.category[0] = network
+    | event.reason = "Data exfiltration attempt detected"
+    
+    // ============================================================
+    // SECTION 3: Query Target (specific logic core to use case)
+    // ============================================================
+    // Filter for VIP users only
+    | user.id = "jsmith" OR user.id = "janedoe"
+    
+    // Filter for Data exfiltration message
+    | message = "Data exfiltration attempt detected"
+    
+    // ============================================================
+    // SECTION 4: Aggregation / Grouping (if needed)
+    // ============================================================
+    | groupBy([user.id], function=[
+      count(as=total_exfil_attempts),
+      collect(rule.name, Vendor.device_name, source.port, destination.port, limit=10)
+    ])
+    
+    // ============================================================
+    // SECTION 5: Exclusions + Threshold Filtering
+    // ============================================================
+    | "total_exfil_attempts" > 3
+    
+    // ============================================================
+    // SECTION 6: Rule Notes
+    // ============================================================
+  unit_tests: []
+
+conversion_metadata:
+  original_saved_search_id: "qzDKx52jMbNR5gphHCiPPdAaILmczvKd"
+  original_name: "stage-review-MEISGN Company Policy - Data Exfiltration Attempts"
+  converted_at: "2026-07-16T14:40:32.867599Z"
+  conversion_script: "saved_search_to_rule_converter.py"

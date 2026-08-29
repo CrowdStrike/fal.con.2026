@@ -1,0 +1,38 @@
+# Detection Rule Template (Generated from NGSIEM Stage-Review)
+# Original Query: stage-review-Palo Alto Networks - NGFW - Traffic IOC Match
+# Generated: 2026-07-15T00:17:40.938594
+
+id: 174cb782-1a8f-41b3-b90d-2adf42ab12d3
+created_timestamp: 2026-07-15T00:17:40.938235Z
+modified_timestamp: 2026-07-15T00:17:40.938247Z
+jira_issue: DETECT-1191
+vendor: stage
+severity: medium
+state: tuning
+tlp: green
+name: Palo Alto Networks - NGFW - Traffic IOC Match
+alert_type: detection
+context:
+  description: Detection rule from NGSIEM: stage-review-Palo Alto Networks - NGFW - Traffic IOC Match
+  reference_urls: []
+  notes: Original NGSIEM saved query imported from stage-review pipeline
+  killbook: 
+  related: []
+mitre:
+  tactic: 
+  technique: 
+rule:
+  tunable: True
+  schedule:
+    ingest_ts: False
+    cron: @every 1h
+    lookback: 75m
+  parser: ["stage"]
+  required_fields: []
+  logic: |
+  unit_tests: []
+ngsiem_source:
+  original_id: Hm4dvi23p7QIHGewxgqIIOHR58WeiDYE
+  original_name: stage-review-Palo Alto Networks - NGFW - Traffic IOC Match
+  imported_at: 2026-07-15T00:17:40.938259Z
+  api_endpoint: https://api.example.com

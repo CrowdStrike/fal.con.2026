@@ -1,0 +1,80 @@
+{
+  "resources": [
+    {
+      "id": "5aae13b07cf14bca8cd48b95926efb87",
+      "type": "correlation",
+      "name": "Okta - SSO - Management Activity Spike in a Short Period of Time",
+      "description": "This rule detects an abnormal volume of management or administrative activities occurring on the management plane of Okta.\nWhile some level of management activity is expected in normal operations, this detection aims to identify significant deviations from the established baseline.\nThis could indicate potential unauthorized access, or misuse of privileges.   \n",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "TA0005",
+      "technique": "T1578.005",
+      "mitre_attack": [
+        {
+          "tactic_id": "TA0005",
+          "technique_id": "T1578.005"
+        }
+      ],
+      "severity": 30,
+      "search": {
+        "outcome": "detection",
+        "filter": "defineTable(\n    query={\n        #Vendor=\"okta\" #event.module=\"sso\" #repo!=\"xdr*\"\n        | #event.kind=\"event\" #event.outcome=\"success\"\n        | array:contains(array=\"event.category[]\", value=\"configuration\")\n        | bucket(field=\"user.name\", span=1h, function=count(as=hourly_event_count), limit=500)\n        | hourly_event_count>0\n        | groupBy([user.name], function=[avg(hourly_event_count, as=hourly_average_event_count),stdDev(hourly_event_count, as=hourly_stddev_event_count)])\n    }, \n    include=[*], \n    name=\"admin_event_stats\",\n    start=7d,\n    end=1h)\n    | #Vendor=\"okta\" #event.module=\"sso\" #repo!=\"xdr*\"\n    | #event.kind=\"event\" #event.outcome=\"success\"\n    | array:contains(array=\"event.category[]\", value=\"configuration\")\n    | groupBy([user.name], function=[count(as=total_events)])\n    | match(file=\"admin_event_stats\", field=[user.name], strict=false)\n    | threshold := hourly_average_event_count + (3 * hourly_stddev_event_count)\n    | case {\n        threshold!=* | threshold := \"0\"; // User not in baseline.\n        *;    \n    }\n    | test(total_events>threshold)\n",
+        "lookback": "1h10m",
+        "trigger_mode": "summary",
+        "execution_mode": "scheduled",
+        "use_ingest_time": false
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 1h0m"
+        },
+        "start_on": "2025-12-15T15:15:00Z"
+      },
+      "api_client_id": "",
+      "user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "user_id": "demo.user1@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "updated_by_user_id": "demo.user1@company.com",
+      "last_updated_on": "2025-12-18T21:32:56.080558Z",
+      "created_on": "2025-12-15T14:46:44.480223Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "0034cfda-d8ed-413c-adcf-651b1dff0a43",
+      "rule_id": "5aae13b07cf14bca8cd48b95926efb87",
+      "executor_rule_id": "5aae13b07cf14bca8cd48b95926efb87",
+      "state": "unpublished",
+      "version": 1,
+      "comment": "First push of rules.",
+      "next_execution_on": "2026-07-23T03:52:53Z",
+      "last_execution": {
+        "result_metadata": {
+          "execution_start": "2026-07-23T02:53:17.997570582Z",
+          "execution_finish": "2026-07-23T02:53:34.697270431Z",
+          "search_window_end": "2026-07-23T02:52:00Z",
+          "result_count": 0,
+          "execution_duration": 16699,
+          "use_ingest_time": false
+        }
+      },
+      "notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "demo.user1@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "attach_report": "false",
+            "send_on_failure": "always",
+            "send_on_success": "never"
+          }
+        }
+      ]
+    }
+  ]
+}

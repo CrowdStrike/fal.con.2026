@@ -1,0 +1,91 @@
+{
+  "resources": [
+    {
+      "id": "019f68aa9aee715ca95c08cd751748cf",
+      "type": "behavioral",
+      "name": "<studentid>-detection-chain-case",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "",
+      "technique": "",
+      "mitre_attack": [],
+      "severity": 70,
+      "search": {
+        "outcome": "case",
+        "filter": "| #event.kind=\"alert\" #Vendor = octan #event.module = firewall\n\n// Correlate 3 security alerts occurring in sequence for the same user\n| correlate(\n    Alert1: {\n        #event.kind=\"alert\" rule.name=\"AV-DETECT-001\"\n    } include: [user.id, source.ip, destination.ip, rule.name, event.severity, event.category, @timestamp, @id],\n    \n    Alert2: {\n        #event.kind=\"alert\" rule.name=\"DLP-BLOCK-001\"\n    } include: [user.id, source.ip, destination.ip, rule.name, event.severity, event.category, @timestamp, @id],\n    \n    Alert3: {\n        #event.kind=\"alert\" rule.name=\"WAF-BLOCK-001\"\n    } include: [user.id, source.ip, destination.ip, rule.name, event.severity, event.category, @timestamp, @id],\n    // All 3 alerts must be for the same user\n    globalConstraints=user.id,\n    // All 3 alerts must occur within 10 minutes\n    within=10m,\n    // Enforce chronological order: Alert1 -> Alert2 -> Alert3\n    sequence=true\n)",
+        "lookback": "0h10m",
+        "trigger_mode": "",
+        "execution_mode": "scheduled",
+        "use_ingest_time": true,
+        "case_template_id": "1bb3e30e665c43b5b0cf3de7b9eb05bc"
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 0h5m"
+        },
+        "start_on": "2026-07-16T02:30:00Z"
+      },
+      "api_client_id": "",
+      "user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "user_id": "demo.user1@company.com",
+      "updated_by_api_client_id": "",
+      "updated_by_user_uuid": "f92557b3-a616-4813-85f4-fc35df1057ca",
+      "updated_by_user_id": "demo.user1@company.com",
+      "last_updated_on": "2026-07-16T02:04:01.182092Z",
+      "created_on": "2026-07-16T02:03:59.08697Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "019f68aa9aee715ca95c08cd751748cf",
+      "executor_rule_id": "ec188d2018124ab08b53d5679328458d",
+      "state": "published",
+      "version": 1,
+      "next_execution_on": "2026-07-23T02:55:00Z",
+      "last_execution": {
+        "result_metadata": {
+          "execution_start": "2026-07-23T02:52:37.947745239Z",
+          "execution_finish": "2026-07-23T02:52:38.739524919Z",
+          "search_window_end": "2026-07-23T02:50:00Z",
+          "result_count": 0,
+          "execution_duration": 791,
+          "use_ingest_time": true
+        }
+      },
+      "notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "secops.team@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "attach_report": "false",
+            "send_on_failure": "always",
+            "send_on_success": "never"
+          }
+        }
+      ],
+      "guardrail_notifications": [
+        {
+          "type": "email",
+          "config": {
+            "recipients": [
+              "secops.team@company.com"
+            ],
+            "plugin_id": "",
+            "config_id": "",
+            "cid": "6c0897218dd041858df57052f5c45bc2",
+            "severity": ""
+          },
+          "options": {
+            "is_guardrail_notification": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

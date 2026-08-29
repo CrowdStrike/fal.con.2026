@@ -1,0 +1,15 @@
+{
+  "id": "search_001",
+  "name": "OKTA-ADMIN-PRIVILEGE-ESCALATION-stage-review",
+  "query_string": "| #repo=\"okta_logs\" #Vendor=\"okta\" | event.action=\"user.account.privilege.grant\" | target.displayName =~ regex(regex=\".*Admin.*\")",
+  "description": "Detects when administrative privileges are granted in Okta. TA0004 - Privilege Escalation, T1078 - Valid Accounts",
+  "owner": "demo.user1@company.com",
+  "created_at": "2026-07-10T10:00:00Z",
+  "modified_at": "2026-07-14T15:30:00Z",
+  "repository": "okta_security_logs",
+  "labels": [
+    "security",
+    "iam",
+    "privilege-escalation"
+  ]
+}

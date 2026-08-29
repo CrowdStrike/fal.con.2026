@@ -1,0 +1,40 @@
+# Detection Rule Template (Converted from NGSIEM Saved Search)
+# Original: OKTA-ADMIN-PRIVILEGE-ESCALATION-stage-review
+# Converted: 2026-07-16T14:40:32.865233
+
+id: "93c55989-e308-43b2-bef8-650b8709c67f"
+created_timestamp: "2026-07-16T14:40:32.865056Z"
+modified_timestamp: "2026-07-16T14:40:32.865065Z"
+vendor: "okta"
+severity: medium
+state: tuning
+name: OKTA-ADMIN-PRIVILEGE-ESCALATION-STAGE-REVIEW
+alert_type: detection
+
+context:
+  description: "This rule identifies suspicious activity patterns based on okta admin privilege escalation stage review"
+  reference_urls: []
+  notes: "Converted from NGSIEM saved search: OKTA-ADMIN-PRIVILEGE-ESCALATION-stage-review"
+  related: []
+
+mitre:
+  tactic: ""
+  technique: ""
+
+rule:
+  tunable: true
+  schedule:
+    ingest_ts: false
+    cron: "@every 1h"
+    lookback: 75m
+  parser: ["unknown"]
+  required_fields: []
+  logic: |-
+    
+  unit_tests: []
+
+conversion_metadata:
+  original_saved_search_id: "search_001"
+  original_name: "OKTA-ADMIN-PRIVILEGE-ESCALATION-stage-review"
+  converted_at: "2026-07-16T14:40:32.865068Z"
+  conversion_script: "saved_search_to_rule_converter.py"

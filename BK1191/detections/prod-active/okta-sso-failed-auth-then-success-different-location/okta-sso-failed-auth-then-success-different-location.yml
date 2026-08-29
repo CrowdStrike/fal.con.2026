@@ -1,0 +1,130 @@
+# Detection Rule Template (Converted from NGSIEM Saved Search)
+# Original: stage-review-Okta-SSO-Failed-Auth-Then-Success-Different-Location
+# Converted: 2026-07-16T14:40:32.866883
+
+id: "bcb3d0b9-e207-4bb8-885f-56ccda098345"
+created_timestamp: "2026-07-16T14:40:32.866718Z"
+modified_timestamp: "2026-07-16T14:40:32.866720Z"
+vendor: "okta"
+severity: high
+state: tuning
+name: OKTA-SSO-FAILED-AUTH-THEN-SUCCESS-DIFFERENT-LOCATION
+alert_type: detection
+
+context:
+  description: "This is a custom MEISGN detection"
+  reference_urls: []
+  notes: "Converted from NGSIEM saved search: stage-review-Okta-SSO-Failed-Auth-Then-Success-Different-Location"
+  related: []
+
+mitre:
+  tactic: "TA0006"
+  technique: "T1110.003"
+
+rule:
+  tunable: true
+  schedule:
+    ingest_ts: false
+    cron: "@every 1h"
+    lookback: 75m
+  parser: ["sso", "okta", "studentid-okta-syslog"]
+  required_fields: ["user.name", "source.ip", "event.action", "event.outcome", "@timestamp"]
+  logic: |-
+    // RULE NAME: Okta-SSO-Failed-Auth-Then-Success-Different-Location
+    
+    // ============================================================
+    // SECTION 1: Log Source Fields (tagged fields for filtering - improves performance)
+    // ============================================================
+    lab.source=*studentid*
+    | #type="studentid-okta-syslog"
+    | #Vendor="okta"
+    | #event.module="sso"
+    | #event.dataset="sso.system"
+    
+    // ============================================================
+    // SECTION 2: CPS Category Fields (tagged fields for filtering - improves performance)
+    // ============================================================
+    | #event.kind="event"
+    | event.action="user.authentication.auth_via_mfa"
+    
+    // ============================================================
+    // SECTION 3: Query Target (specific logic core to use case)
+    // ============================================================
+    | correlate(
+        FailedAuth: {
+          #event.outcome="failure"
+        } include: [user.name, client.geo.country_name, client.geo.city_name, source.ip, @timestamp, @id],
+        SuccessAuth: {
+          #event.outcome="success"
+        } include: [user.name, client.geo.country_name, client.geo.city_name, source.ip, @timestamp, @id],
+        globalConstraints=[user.name],
+        sequence=true,
+        within=1h
+      )
+    
+    // ============================================================
+    // SECTION 4: Aggregation / Grouping (if needed)
+    // ============================================================
+    | groupBy([SuccessAuth.user.name], function=([
+        count(as=total_events),
+        count(FailedAuth.client.geo.country_name, distinct=true, as=failed_country_count),
+        count(FailedAuth.client.geo.city_name, distinct=true, as=failed_city_count),
+        collect([FailedAuth.client.geo.country_name, FailedAuth.client.geo.city_name, FailedAuth.source.ip, SuccessAuth.client.geo.country_name, SuccessAuth.client.geo.city_name, SuccessAuth.source.ip], limit=100)
+      ]))
+    
+    // ============================================================
+    // SECTION 5: Exclusions + Threshold Filtering
+    // ============================================================
+    // Uncomment and customize exclusions for your environment:
+    // | SuccessAuth.user.name != "service-account@example.com"
+    // | !cidr(SuccessAuth.source.ip, subnet=["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"])
+    | total_events >= 2
+    | failed_country_count > 1 OR failed_city_count > 1
+    
+    // ============================================================
+    // SECTION 6: Rule Notes
+    // ============================================================
+    // Description: This is a custom MEISGN detection
+    // Outcome: Execution Mode: Scheduled Detection
+    // Event Timestamp: Ingested (@ingesttimestamp)
+    // Trigger Type: Verbose
+    // Severity: High
+    // MITRE ATT&CK: TA0006 (Credential Access) / T1110.003 (Brute Force: Password Spraying)
+    // Start Date: Please set the next possible scheduling window.
+    // End Date:
+    // Search Frequency: Run this search every 1 hour.
+    // Search Window: Search the last 1 hour.
+    // System Notifications: None
+    //
+    // Detection Logic:
+    // This rule uses the correlate() function to detect credential stuffing and brute force attacks
+    // by identifying temporal patterns where multiple failed authentication attempts from different
+    // geographic locations are followed by a successful login within a 1-hour window.
+    //
+    // Key Features:
+    // - Enforces temporal ordering: failures MUST precede success (sequence=true)
+    // - Links events by user.name using globalConstraints
+    // - Detects geographic anomalies (multiple countries OR cities)
+    // - Collects event IDs (@id) for correlation rule lookups
+    // - Minimum threshold: 2+ correlated events from multiple locations
+    //
+    // Investigation Fields:
+    // - SuccessAuth.user.name: Targeted user account
+    // - total_events: Number of events in the attack pattern
+    // - failed_country_count: Number of unique countries in failed attempts
+    // - failed_city_count: Number of unique cities in failed attempts
+    // - FailedAuth.client.geo.country_name: Array of failure countries
+    // - FailedAuth.client.geo.city_name: Array of failure cities
+    // - FailedAuth.source.ip: Array of failure source IPs
+    // - SuccessAuth.client.geo.country_name: Success country
+    // - SuccessAuth.client.geo.city_name: Success city
+    // - SuccessAuth.source.ip: Success source IP
+    // - FailedAuth.@id: Event IDs for failed attempts
+    // - SuccessAuth.@id: Event ID for successful attempt
+  unit_tests: []
+
+conversion_metadata:
+  original_saved_search_id: "V26QfkPZImbWg51iaLCjdlMclN3GqSrj"
+  original_name: "stage-review-Okta-SSO-Failed-Auth-Then-Success-Different-Location"
+  converted_at: "2026-07-16T14:40:32.866723Z"
+  conversion_script: "saved_search_to_rule_converter.py"

@@ -1,0 +1,97 @@
+# Detection Rule Template (Converted from NGSIEM Saved Search)
+# Original: stage-review-Secure-Access-Suspicious-User-Agent-Combo
+# Converted: 2026-07-16T14:40:32.868792
+
+id: "d0e32f77-d3bb-4149-8f17-da087523f053"
+created_timestamp: "2026-07-16T14:40:32.868611Z"
+modified_timestamp: "2026-07-16T14:40:32.868613Z"
+vendor: "secure"
+severity: medium
+state: tuning
+name: SECURE-ACCESS-SUSPICIOUS-USER-AGENT-COMBO
+alert_type: detection
+
+context:
+  description: "This rule identifies suspicious activity patterns based on secure access suspicious user agent combo"
+  reference_urls: []
+  notes: "Converted from NGSIEM saved search: stage-review-Secure-Access-Suspicious-User-Agent-Combo"
+  related: []
+
+mitre:
+  tactic: ""
+  technique: ""
+
+rule:
+  tunable: true
+  schedule:
+    ingest_ts: false
+    cron: "@every 1h"
+    lookback: 75m
+  parser: ["studentid-secure-access-syslog"]
+  required_fields: ["user.name", "source.ip", "event.action", "event.outcome"]
+  logic: |-
+    // RULE NAME: Secure-Access-Suspicious-User-Agent-Combo
+    
+    // ============================================================
+    // SECTION 1: Log Source Fields (tagged fields for filtering - improves performance)
+    // ============================================================
+    lab.source = *studentid* #type = "studentid-secure-access-syslog"
+    
+    // ============================================================
+    // SECTION 2: CPS Category Fields (tagged fields for filtering - improves performance)
+    // ============================================================
+    | #event.kind="event" #event.outcome="success"
+    
+    // ============================================================
+    // SECTION 3: Query Target (specific logic core to use case)
+    // ============================================================
+    // Create a user agent combo identifier
+    // Create a user agent combo identifier
+    | user_agent_combo := format("%s on %s", field=[user_agent.name, user_agent.device.name])
+    
+    // Flag patterns that are ACTUALLY unusual/suspicious in your data:
+    | case {
+        // Generic/Unknown browser or device (could indicate spoofing or automation)
+        user_agent.name = "Generic" | anomaly_type := "Generic/Unknown Browser";
+        user_agent.device.name = "Generic" | anomaly_type := "Generic/Unknown Device";
+    
+        // Mobile Safari accessing enterprise apps (less common, could be BYOD risk)
+        user_agent.name = "Safari" AND user_agent.device.name = "Mobile" | anomaly_type := "Mobile Safari Access";
+    
+        // Tablet access (unusual for enterprise work, could be personal device)
+        user_agent.device.name = "Tablet" | anomaly_type := "Tablet Device Access";
+    
+        // Desktop Safari (uncommon in Windows-heavy enterprises)
+        user_agent.name = "Safari" AND user_agent.device.name = "Desktop" | anomaly_type := "Desktop Safari (Mac)";
+    
+        // Everything else
+        * | anomaly_type := "Normal Desktop Browser";
+    }
+    
+    // Show only the anomalous patterns
+    | anomaly_type != "Normal Desktop Browser"
+    
+    // ============================================================
+    // SECTION 4: Aggregation / Grouping (if needed)
+    // ============================================================
+    | groupBy([user.name, anomaly_type], function=[
+        count(as=access_count),
+        collect([user_agent_combo, service.name, event.action, source.ip, source.geo.city_name], limit=10)
+      ])
+    
+    // ============================================================
+    // SECTION 5: Exclusions + Threshold Filtering
+    // ============================================================
+    // Sort by most frequent anomalies
+    | sort(access_count, order=desc)
+    
+    // ============================================================
+    // SECTION 6: Rule Notes
+    // ============================================================
+  unit_tests: []
+
+conversion_metadata:
+  original_saved_search_id: "XA2nxnA0Hd7IN0aZ99b0sHxmmZ0YYWFZ"
+  original_name: "stage-review-Secure-Access-Suspicious-User-Agent-Combo"
+  converted_at: "2026-07-16T14:40:32.868615Z"
+  conversion_script: "saved_search_to_rule_converter.py"

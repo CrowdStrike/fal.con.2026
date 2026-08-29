@@ -1,0 +1,54 @@
+{
+  "resources": [
+    {
+      "id": "019cae8ceb587dd0804a473096d25c21",
+      "type": "correlation",
+      "name": "test",
+      "customer_id": "6c0897218dd041858df57052f5c45bc2",
+      "tactic": "",
+      "technique": "",
+      "mitre_attack": [],
+      "severity": 50,
+      "search": {
+        "outcome": "detection",
+        "filter": "testing\n/*\n  Atlas:\n    id: PR_REC_0001\n    state: testing\n    business_driver: []\n    threat:\n      type: eCrime\n      tag: []\n    killchain:\n      phase: Prepare\n      stage: Reconnaissance\n    behaviour: []\n    mitre_attack: ''\n    data:\n      type: []\n      source: []\n    context_array:\n    - testing\n*/\n| Atlas.id := \"PR_REC_0001\"\n| Atlas.state := \"testing\"\n| Atlas.threat.type := \"eCrime\"\n| Atlas.killchain.phase := \"Prepare\"\n| Atlas.killchain.stage := \"Reconnaissance\"\n| Atlas.mitre_attack := \"\"\n| array:append(values=\"testing\", array=\"Atlas.context_array[]\")",
+        "lookback": "0h5m",
+        "trigger_mode": "verbose",
+        "execution_mode": "scheduled",
+        "use_ingest_time": false
+      },
+      "operation": {
+        "schedule": {
+          "definition": "@every 1h0m"
+        },
+        "start_on": "2026-03-02T13:31:43Z"
+      },
+      "api_client_id": "2ff8a69da8704ba894ab428d833f85a2",
+      "user_uuid": "",
+      "user_id": "api_client",
+      "updated_by_api_client_id": "2ff8a69da8704ba894ab428d833f85a2",
+      "updated_by_user_uuid": "",
+      "updated_by_user_id": "api_client",
+      "last_updated_on": "2026-03-02T12:36:37.703835Z",
+      "created_on": "2026-03-02T12:36:36.82401Z",
+      "status": "inactive",
+      "status_msg": "",
+      "template_id": "",
+      "rule_id": "019cae8ceb587dd0804a473096d25c21",
+      "executor_rule_id": "841650ba684947f6b4b23b7aaf3c87da",
+      "state": "published",
+      "version": 1,
+      "next_execution_on": "2026-07-23T03:31:43Z",
+      "last_execution": {
+        "result_metadata": {
+          "execution_start": "2026-07-23T02:33:46.328422456Z",
+          "execution_finish": "2026-07-23T02:33:47.476381214Z",
+          "search_window_end": "2026-07-23T02:31:43Z",
+          "result_count": 87,
+          "execution_duration": 1147,
+          "use_ingest_time": false
+        }
+      }
+    }
+  ]
+}

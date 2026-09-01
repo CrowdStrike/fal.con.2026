@@ -1,0 +1,10 @@
+[project]
+name = "fusion-workflow-validator"
+version = "2.1.0"
+description = "Validates CrowdStrike Fusion SOAR workflow YAML files before import"
+requires-python = ">=3.9"
+dependencies = ["pyyaml"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

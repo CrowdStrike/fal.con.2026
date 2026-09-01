@@ -1,0 +1,38 @@
+# Regression fixture for INVALID_VARIABLE_SUBSCRIPT narrowing.
+#
+# The rule used to flag any ${...[N]...} pattern as CRITICAL. That was too
+# broad - ${data['ActionName.results'][0].field} is a production-valid pattern
+# in Fusion string-interpolation contexts (comment bodies, tag values, email
+# bodies, text properties). This fixture exercises that valid pattern and MUST
+# pass the INVALID_VARIABLE_SUBSCRIPT rule (no errors emitted by this rule for
+# this file).
+#
+# Evidence of validity: workflow c4a57bc741a848879878c421b8fa3358 on a personal
+# test CID deployed and mock-executed successfully; production client workflow
+# MDDA-Phase2v4.11.0.yaml uses this pattern in CEL expressions.
+#
+# Unrelated validator rules (e.g. MISSING_ACTION_CLASS) may still emit INFO
+# notices - that is out of scope for this regression test.
+name: Valid data['X.results'][0].field subscripting
+description: |
+  Exercises ${data['Action.results'][0].field} in a comment string. This must
+  NOT trigger INVALID_VARIABLE_SUBSCRIPT after the rule was narrowed to only
+  flag ${Trigger.*[N]...} references.
+trigger:
+  event: Investigatable/NGSIEM
+  type: Signal
+actions:
+  CountQuery:
+    id: "550e8400-e29b-41d4-a716-4466554400aa"
+    class: "Inline.QueryEvent"
+    properties:
+      search_query: 'groupBy([_repo], function=count(as=hourly_count))'
+      search_timeframe_minutes: 60
+
+  CommentOnCase:
+    id: "550e8400-e29b-41d4-a716-4466554400bb"
+    class: "AddCommentToCase"
+    properties:
+      # The load-bearing expression for this regression test.
+      comment: "Hourly count was ${data['CountQuery.results'][0].hourly_count} events."
+      case_id: "${Trigger.CaseID}"

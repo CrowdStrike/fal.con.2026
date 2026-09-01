@@ -1,0 +1,32 @@
+# Valid workflow that should pass all validation
+name: Valid Workflow Test
+description: Well-formed workflow that should pass all Priority 1 validation rules
+trigger:
+  type: "On demand"
+  parameters:
+    - name: alertId
+      type: investigatableID
+actions:
+  ExtractData:
+    id: "550e8400-e29b-41d4-a716-44665544000c"
+    class: "Inline.QueryEvent"
+    properties:
+      device_id: "${Trigger.SensorID}"
+      latest: "${Workflow.Execution.Time}"
+      search_timeframe_minutes: 60
+      _fields: ["${Trigger.alertId}"]  # CORRECT LOCATION - inside properties
+
+  SendNotification:
+    id: "550e8400-e29b-41d4-a716-44665544000d"
+    class: "SendEmail"
+    properties:
+      to: ["admin@company.com", "security@company.com"]
+      subject: "Security Alert ${Trigger.alertId}"
+      msg: "Alert details: ${ExtractData.Output}"
+      _fields: ["${ExtractData.Output}"]  # CORRECT LOCATION - inside properties
+
+  CreateVariable:
+    id: "550e8400-e29b-41d4-a716-44665544000e"
+    properties:  # Built-in action - no 'class' field required
+      variable_name: "alertStatus"
+      variable_value: "processed"

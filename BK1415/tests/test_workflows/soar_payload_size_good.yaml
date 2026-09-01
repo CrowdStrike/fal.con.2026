@@ -1,0 +1,76 @@
+# Test fixture: CreateLookupFile with single SOAR page output (GOOD pattern)
+# This should NOT trigger SOAR_MULTI_PAGE_LOOKUP_RISK.
+#
+# Each CreateLookupFile references only one SOAR page's data,
+# keeping each action's message under Fusion's ~1MB limit.
+
+name: soar-payload-size-good
+description: Test workflow with per-page SOAR lookups (should pass)
+trigger:
+    next:
+        - ListResolvedDefenderAlerts
+    event: Schedule
+    name: Scheduled
+    schedule:
+        time_cycle: 33 12/1 * * *
+    type: Scheduled
+actions:
+    ListResolvedDefenderAlerts:
+        id: 020b7bdb5683467eab956924a8ddbacc
+        name: List resolved Defender alerts (page 1)
+        next:
+            - CreateAlertLookupFileP1
+        properties:
+            config_id: 872112c4c92b4227a826412fe8effe3f
+            params:
+                query:
+                    $filter: status eq 'resolved'
+                    $skip: "0"
+                    $top: 50
+        version_constraint: ~0
+    # GOOD: This CreateLookupFile references only ONE SOAR action output.
+    CreateAlertLookupFileP1:
+        id: 51c4db34ab30465f796d7550f3e3e97b
+        class: CreateLookupFile
+        name: Write resolved alert IDs to lookup file (page 1)
+        next:
+            - ListResolvedDefenderAlertsPage2
+        properties:
+            lookup_file_content_text: '${"alert_id,alert_resolved_date\n" + data["ListResolvedDefenderAlerts.API_Integration.Custom_Microsoft_Defender_For_Office_365_API''s.MS_Defender_for_Office_365_-_List_Alerts.body.value"].map(a, a.id + "," + a.resolvedDateTime).join("\n")}'
+            lookup_file_content_type: text
+            lookup_file_name: defender_alerts_p1_${Workflow.Execution.ID}.csv
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    ListResolvedDefenderAlertsPage2:
+        id: 020b7bdb5683467eab956924a8ddbacc
+        name: List resolved Defender alerts (page 2)
+        next:
+            - CreateAlertLookupFileP2
+        properties:
+            config_id: 872112c4c92b4227a826412fe8effe3f
+            params:
+                query:
+                    $filter: status eq 'resolved'
+                    $skip: "50"
+                    $top: 50
+        version_constraint: ~0
+    # GOOD: This CreateLookupFile references only ONE SOAR action output (page 2).
+    CreateAlertLookupFileP2:
+        id: 51c4db34ab30465f796d7550f3e3e97b
+        class: CreateLookupFile
+        name: Write resolved alert IDs to lookup file (page 2)
+        next:
+            - DoSomething
+        properties:
+            lookup_file_content_text: '${"alert_id,alert_resolved_date\n" + data["ListResolvedDefenderAlertsPage2.API_Integration.Custom_Microsoft_Defender_For_Office_365_API''s.MS_Defender_for_Office_365_-_List_Alerts.body.value"].map(a, a.id + "," + a.resolvedDateTime).join("\n")}'
+            lookup_file_content_type: text
+            lookup_file_name: defender_alerts_p2_${Workflow.Execution.ID}.csv
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    DoSomething:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        class: PrintData
+        name: Print data
+        properties:
+            text_data: done
+        version_constraint: ~1

@@ -1,0 +1,301 @@
+name: pipe-count-regression-test
+description: 'Minimal workflow with the MDDA CRA query that triggered false-positive pipe count of 202 (actual: 97 top-level + 1 implicit = 98 API count)'
+actions:
+  CaseRiskAssessmentV4EnhancedIdentityContext:
+    id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+    inline_configuration:
+      input_schema:
+        $schema: https://json-schema.org/draft-07/schema
+        properties:
+          ad_classification:
+            type: string
+            title: AD Classification
+          ad_department:
+            type: string
+            title: AD Department
+          ad_domain:
+            type: string
+            title: AD Domain
+          ad_entity_name:
+            type: string
+            title: AD Entity Name
+          ad_ou:
+            type: string
+            title: AD OU
+          ad_risk_severity:
+            type: string
+            title: AD Risk Severity
+          alertId:
+            type: string
+            title: AlertId
+            default: '*'
+          create_case_risk_level:
+            type: string
+            title: Create case risk level
+            default: '*'
+          entra_display_name:
+            type: string
+            title: Entra Display Name
+          entra_job_title:
+            type: string
+            title: Entra Job Title
+          entra_office_location:
+            type: string
+            title: Entra Office Location
+          hostname:
+            type: string
+            title: Hostname
+          other_det_count:
+            type: string
+            title: Other Detection Count
+          other_det_score:
+            type: string
+            title: Other Detection Score
+          other_det_summary:
+            type: string
+            title: Other Detection Summary
+          vt_as_owner:
+            type: string
+            title: VT ASN Owner
+          vt_country:
+            type: string
+            title: VT Country
+        required:
+        - alertId
+        - create_case_risk_level
+        type: object
+        description: Generated request schema
+      output_schema:
+        $schema: https://json-schema.org/draft-07/schema
+        properties:
+          activity_summary:
+            type: string
+            title: Activity summary
+          agent_type:
+            type: string
+            title: Agent type
+          attack_story:
+            type: string
+            title: Attack story
+          behavior_verdict:
+            type: string
+            title: Behavior verdict
+          case_description:
+            type: string
+            title: Case description
+          case_priority:
+            type: string
+            title: Case priority
+          case_title:
+            type: string
+            title: Case title
+          create_case:
+            type: boolean
+            title: Create case
+          ioc_verdict:
+            type: string
+            title: IOC verdict
+          ip_context:
+            type: string
+            title: IP context
+          other_det_summary:
+            type: string
+            title: Other detection summary
+          risk_breakdown:
+            type: string
+            title: Risk breakdown
+          source:
+            properties:
+              ip:
+                type: string
+                title: Source Ip
+            required:
+            - ip
+            type: object
+          threat_level:
+            type: string
+            title: Threat level
+          threshold_explanation:
+            type: string
+            title: Threshold explanation
+          total_risk_score:
+            type: number
+            title: Total risk score
+          user:
+            properties:
+              email:
+                type: string
+                title: User Email
+            required:
+            - email
+            type: object
+          user_agent_display:
+            type: string
+            title: User agent display
+          verdict_explanation:
+            type: string
+            title: Verdict explanation
+        required:
+        - case_description
+        - case_priority
+        - case_title
+        - create_case
+        - source
+        - user
+        - risk_breakdown
+        - ioc_verdict
+        - threshold_explanation
+        - total_risk_score
+        type: object
+        description: Generated response schema
+      config:
+        description: ''
+        end: now
+        last_modified_by: nchurch@crowdstrike.com
+        last_modified_by_user:
+          email: nathan.church@crowdstrike.com
+        repo_or_view: search-all
+        search_name: CaseRiskAssessmentV410
+        search_query: "Ngsiem.alert.id=?alertId\n| TotalDownloadedGB != null\n| user.email := coalesce([user.email, Vendor.UserId])\n| source.ip := coalesce([source.ip, client.ip])\n| FileCount := coalesce([FileCount,\
+          \ _fileCount, \"multiple\"])\n| extUser_riskScore := coalesce([extUser_riskScore, 0])\n| file_riskScore := coalesce([file_riskScore, 0])\n| volume_riskScore := coalesce([volume_riskScore, 0])\n\
+          | multiIP_riskScore := coalesce([multiIP_riskScore, 0])\n| max_burst_risk := coalesce([max_burst_risk, 0])\n| max_burst_gb := coalesce([max_burst_gb, 0])\n| max_burst_gb_display := format(format=\"\
+          %.4f\", field=[max_burst_gb])\n| max_burst_files := coalesce([max_burst_files, 0])\n| burst_count := coalesce([burst_count, 0])\n| Behaviour_riskDescription := coalesce([Behaviour_riskDescription,\
+          \ \"No behavioral data\"])\n| ioc_riskState := coalesce([ioc_riskState, \"UNKNOWN\"])\n| user_agent.original := coalesce([user_agent.original, \"Unknown\"])\n| hostname := coalesce([?{hostname=Unknown},\
+          \ \"Unknown\"])\n| case { hostname = \"null\" OR hostname = \"\" OR hostname = \"[]\" OR hostname = \"Unknown\" | host_phrase := \"\"; * | host_phrase := format(format=\"on host %s \", field=[hostname]);\
+          \ }\n| match(file=\"falconUserIdentityContext.csv\", field=[user.email], include=[user.risk_severity, user.is_privileged, user.department, user.full_name, user.job_title], strict=false)\n| case\
+          \ {\n    user.risk_severity = \"CRITICAL\" | userIdentityRisk := 50;\n    user.risk_severity = \"HIGH\" | userIdentityRisk := 40;\n    user.risk_severity = \"MEDIUM\" | userIdentityRisk := 20;\n\
+          \    user.risk_severity = \"LOW\" | userIdentityRisk := 0;\n    * | userIdentityRisk := 0;\n}\n| case { user.is_privileged = \"true\" | userIdentityRisk := userIdentityRisk + 30; * | userIdentityRisk\
+          \ := userIdentityRisk; }\n| case { user.full_name = \"*Contractor*\" | contractorRisk := 15; * | contractorRisk := 0; }\n| userIdentityRisk := userIdentityRisk + contractorRisk\n| contractorStatus\
+          \ := if(condition=contractorRisk > 0, then=\"YES\", else=\"NO\")\n| user.risk_severity := coalesce([user.risk_severity, \"Not Assessed\"])\n| user.is_privileged := coalesce([user.is_privileged,\
+          \ \"NO\"])\n| user.department := coalesce([user.department, \"Unknown\"])\n| user.job_title := coalesce([user.job_title, \"Unknown\"])\n| total_risk_score := extUser_riskScore + file_riskScore\
+          \ + volume_riskScore + multiIP_riskScore + ioc_riskPoints + Behaviour_riskScore + max_burst_risk + userIdentityRisk\n| case {\n    TotalDownloadedGB = /^([5-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9]).*\
+          \ GB/ | volume_multiplier := 50;\n    TotalDownloadedGB = /^([1-4][0-9][0-9][0-9]).* GB/ | volume_multiplier := 30;\n    TotalDownloadedGB = /^([5-9][0-9][0-9]).* GB/ | volume_multiplier := 15;\n\
+          \    * | volume_multiplier := 0;\n}\n| total_risk_score := total_risk_score + volume_multiplier\n| case {\n    user_agent.original = /OneDriveMpc/ | user_agent_family := \"OneDriveMpc\";\n   \
+          \ user_agent.original = /SkyDriveSync/ | user_agent_family := \"SkyDriveSync\";\n    user_agent.original = /Microsoft Office/ | user_agent_family := \"MicrosoftOffice\";\n    user_agent.original\
+          \ = /OfficeScripts/ | user_agent_family := \"OfficeScripts\";\n    user_agent.original = /Teams\\// | user_agent_family := \"MicrosoftTeams\";\n    * | user_agent_family := \"\";\n}\n| match(file=\"\
+          known_user_agents.csv\", field=[user_agent_family], include=[reduction_points], strict=false)\n| corporate_tool_reduction := coalesce([reduction_points, 0])\n| total_risk_score := total_risk_score\
+          \ + corporate_tool_reduction\n| known_baseline_reduction := if(condition=Behaviour_riskScore==0, then=-15, else=0)\n| total_risk_score := total_risk_score + known_baseline_reduction\n| case {\
+          \ extUser_riskScore = 0 AND userIdentityRisk = 0 | low_risk_internal_reduction := -10; * | low_risk_internal_reduction := 0; }\n| total_risk_score := total_risk_score + low_risk_internal_reduction\n\
+          | vt_as_owner := ?{vt_as_owner=Unavailable}\n| vt_country := ?{vt_country=N/A}\n| case { vt_as_owner = /ZSCALER/ | is_proxy_ip := 1; * | is_proxy_ip := 0; }\n| case { Behaviour_riskDescription\
+          \ = /region not seen|ip not seen|country not seen/ | is_location_signal := 1; * | is_location_signal := 0; }\n| case { is_proxy_ip = 1 AND is_location_signal = 1 | proxy_behavior_applied := 1;\
+          \ * | proxy_behavior_applied := 0; }\n| case { proxy_behavior_applied = 1 | total_risk_score := total_risk_score - Behaviour_riskScore; * | total_risk_score := total_risk_score; }\n| case { proxy_behavior_applied\
+          \ = 1 AND known_baseline_reduction = 0 AND Behaviour_riskScore > 0 | total_risk_score := total_risk_score - 15 | known_baseline_reduction := -15; proxy_behavior_applied = 1 AND known_baseline_reduction\
+          \ = 0 | total_risk_score := total_risk_score - 15; proxy_behavior_applied = 1 AND Behaviour_riskScore > 0 | known_baseline_reduction := -15; * | total_risk_score := total_risk_score; }\n| other_det_pts\
+          \ := ?{other_det_score=0}\n| total_risk_score := total_risk_score + other_det_pts\n| other_det_summary := ?{other_det_summary=None}\n| total_risk_score := if(condition=total_risk_score < 0, then=0,\
+          \ else=total_risk_score)\n| case {\n    total_risk_score >= 200 | case_priority := \"CRITICAL\";\n    total_risk_score >= 150 | case_priority := \"HIGH\";\n    total_risk_score >= 100 | case_priority\
+          \ := \"MEDIUM\";\n    total_risk_score >= 50  | case_priority := \"LOW\";\n    total_risk_score < 50   | case_priority := \"INFORMATIONAL\";\n}\n| threshold_value := ?{create_case_risk_level=50}\n\
+          | create_case := if(condition=total_risk_score>=?{create_case_risk_level=50},then=true,else=false)\n| case {\n    ioc_riskState = \"MALICIOUS\" | ioc_verdict := format(format=\"YES - Malicious\
+          \ IP detected in file access logs (+%s pts)\", field=[ioc_riskPoints]);\n    ioc_riskState = \"SUSPICIOUS\" | ioc_verdict := format(format=\"POSSIBLY - Suspicious IP detected in file access logs\
+          \ (+%s pts)\", field=[ioc_riskPoints]);\n    ioc_riskState = \"CLEAN\" | ioc_verdict := \"NO - File access from known infrastructure (0 pts)\";\n    * | ioc_verdict := \"N/A - Source IP not included\
+          \ in threat intelligence scope (0 pts)\";\n}\n| risk_breakdown := format(format=\"GuestAcct: %s | File: %s | Volume: %s | MultiIP: %s | Burst: %s | IOC: %s | Behavior: %s | Identity: %s | Massive:\
+          \ %s | CorpTool: %s | Baseline: %s | LowRisk: %s | Proxy: %s | OtherDet: %s pts\",\n    field=[extUser_riskScore, file_riskScore, volume_riskScore, multiIP_riskScore, max_burst_risk, ioc_riskPoints,\
+          \ Behaviour_riskScore, userIdentityRisk, volume_multiplier, corporate_tool_reduction, known_baseline_reduction, low_risk_internal_reduction, proxy_behavior_applied, other_det_pts])\n| case {\n\
+          \    max_burst_risk > 0 | burst_display := format(format=\"Max %sGB in 5-minute period (+%s pts)\", field=[max_burst_gb_display, max_burst_risk]);\n    * | burst_display := \"No significant burst\
+          \ detected (activity spread evenly over time)\";\n}\n| case {\n    create_case = true | threshold_explanation := format(format=\"Case created: Risk score (%s pts) meets or exceeds threshold (%s\
+          \ pts)\", field=[total_risk_score, threshold_value]);\n    * | threshold_explanation := format(format=\"Case NOT created: Risk score (%s pts) below threshold (%s pts)\", field=[total_risk_score,\
+          \ threshold_value]);\n}\n| case {\n    contractorStatus = \"YES\" AND user.is_privileged = \"true\" | account_context := \"Privileged Contractor Account\";\n    contractorStatus = \"YES\" | account_context\
+          \ := \"Contractor Account\";\n    user.is_privileged = \"true\" | account_context := \"Privileged Account\";\n    * | account_context := \"Standard User Account\";\n}\n| case {\n    user_agent.original\
+          \ = /Chrome/ | agent_type := \"Browser (Chrome)\";\n    user_agent.original = /Edge/ | agent_type := \"Browser (Edge)\";\n    user_agent.original = /Firefox/ | agent_type := \"Browser (Firefox)\"\
+          ;\n    user_agent.original = /Safari/ | agent_type := \"Browser (Safari)\";\n    user_agent.original = /SkyDriveSync|OneDrive/ | agent_type := \"Microsoft OneDrive Sync Client (Corporate Tool)\"\
+          ;\n    user_agent.original = /Office/ | agent_type := \"Microsoft Office Application (Corporate Tool)\";\n    user_agent.original = /OfficeScripts/ | agent_type := \"Microsoft Office Scripts (Corporate\
+          \ Automation)\";\n    user_agent.original = /MicrosoftTeams/ | agent_type := \"Microsoft Teams (Corporate Tool)\";\n    user_agent.original = /curl/ | agent_type := \"[SUSPICIOUS] curl (Command-line\
+          \ tool)\";\n    user_agent.original = /wget/ | agent_type := \"[SUSPICIOUS] wget (Command-line tool)\";\n    user_agent.original = /PowerShell/ | agent_type := \"[SUSPICIOUS] PowerShell (Scripting)\"\
+          ;\n    user_agent.original = /python/ | agent_type := \"[SUSPICIOUS] Python Script\";\n    user_agent.original = /Unknown/ | agent_type := \"Unknown Tool\";\n    * | agent_type := \"Other Application\"\
+          ;\n}\n| case {\n    Behaviour_riskDescription = /user not seen/ | behavior_verdict := \"**NEW USER** - Never seen before\";\n    Behaviour_riskDescription = /ip not seen/ | behavior_verdict :=\
+          \ \"**NEW IP** - Never seen in last 30 days\";\n    Behaviour_riskDescription = /country not seen/ | behavior_verdict := \"**NEW COUNTRY** - Never logged in from this location\";\n    Behaviour_riskDescription\
+          \ = /region not seen/ | behavior_verdict := \"**NEW REGION** - Region not seen in last 30 days\";\n    Behaviour_riskScore > 20 | behavior_verdict := \"**ABNORMAL BEHAVIOR** - Deviates from baseline\"\
+          ;\n    * | behavior_verdict := \"**KNOWN BASELINE** - Activity within expected patterns\";\n}\n| case {\n    proxy_behavior_applied = 1 | behavior_verdict := format(format=\"%s [PROXY ADJUSTED\
+          \ - %s detected, location signal neutralized]\", field=[behavior_verdict, vt_as_owner]);\n    * | behavior_verdict := behavior_verdict;\n}\n| case {\n    ioc_riskState = \"MALICIOUS\" | threat_level\
+          \ := \"CRITICAL THREAT\";\n    ioc_riskState = \"SUSPICIOUS\" | threat_level := \"POSSIBLE THREAT\";\n    Behaviour_riskScore >= 40 | threat_level := \"HIGH RISK - Behavioral Anomaly\";\n    Behaviour_riskScore\
+          \ >= 30 | threat_level := \"ELEVATED RISK - Behavioral Change\";\n    Behaviour_riskScore > 20 | threat_level := \"MODERATE RISK - Baseline Deviation\";\n    total_risk_score >= 60 | threat_level\
+          \ := \"HIGH RISK - Multiple Factors\";\n    total_risk_score >= 50 | threat_level := \"MODERATE RISK - Review Required\";\n    * | threat_level := \"LOW RISK - Standard Activity\";\n}\n| case\
+          \ {\n    location.country != \"\" AND location.country != \"null\" | location_display := location.country;\n    * | location_display := \"Unknown Location\";\n}\n| case {\n    user_agent.original\
+          \ != \"null\" AND user_agent.original != \"No Data\" AND user_agent.original != \"Unknown\" AND user_agent.original != \"\" |\n        user_agent_display := user_agent.original;\n    * | user_agent_display\
+          \ := \"(not provided by Microsoft)\";\n}\n| dns_display := coalesce([source.ip.dns, \"(not resolved)\"])\n| case { dns_display = \"null\" OR dns_display = \"\" | dns_display := \"(not resolved)\"\
+          ; * | dns_display := dns_display; }\n| user_name_display := coalesce([user.full_name, user.email])\n| case { user_name_display = \"null\" OR user_name_display = \"\" | user_name_display := user.email;\
+          \ * | user_name_display := user_name_display; }\n| ip_context := format(format=\"IP: %s | Location: %s | DNS: %s\", field=[source.ip, location_display, dns_display])\n| case {\n    ioc_riskState\
+          \ = \"MALICIOUS\" | verdict_explanation := \"Malicious IP detected in threat intelligence - IMMEDIATE THREAT\";\n    ioc_riskState = \"SUSPICIOUS\" | verdict_explanation := \"Suspicious IP activity\
+          \ detected - INVESTIGATE\";\n    ioc_riskState = \"CLEAN\" AND Behaviour_riskDescription = /ip not seen/ | verdict_explanation := \"IP not found in threat intelligence, but NEVER SEEN BEFORE -\
+          \ Suggests compromised account or unauthorized access\";\n    ioc_riskState = \"CLEAN\" AND Behaviour_riskDescription = /country not seen/ | verdict_explanation := \"IP not found in threat intelligence,\
+          \ from NEW COUNTRY - Unusual login location\";\n    ioc_riskState = \"CLEAN\" AND Behaviour_riskScore > 20 | verdict_explanation := \"IP not found in threat intelligence, but ABNORMAL BEHAVIOR\
+          \ detected\";\n    ioc_riskState = \"CLEAN\" | verdict_explanation := \"IP not found in threat intelligence - Normal activity within baseline\";\n    Behaviour_riskDescription = /14 days/ | verdict_explanation\
+          \ := \"Behavioral anomaly: NEW IP - ip not seen in last 30 days for this user - Requires investigation\";\n    * | verdict_explanation := format(format=\"Behavioral anomaly: %s - Requires investigation\"\
+          , field=[Behaviour_riskDescription]);\n}\n| case {\n    Behaviour_riskDescription = /14 days/ | Behaviour_riskDescription_display := \"NEW IP - ip not seen in last 30 days for this user\";\n \
+          \   * | Behaviour_riskDescription_display := Behaviour_riskDescription;\n}\n| case {\n    Behaviour_riskDescription = /ip not seen/ AND agent_type = /SUSPICIOUS/ | threat_indicators := \"NEW IP\
+          \ + SUSPICIOUS TOOL - High confidence compromised account or data exfiltration\";\n    Behaviour_riskDescription = /ip not seen/ | threat_indicators := \"NEW IP LOCATION - User accessing from\
+          \ unfamiliar location\";\n    Behaviour_riskDescription = /country not seen/ | threat_indicators := \"NEW COUNTRY - First time user accessed from this geographic region\";\n    agent_type = /SUSPICIOUS/\
+          \ | threat_indicators := \"SUSPICIOUS TOOL DETECTED - Non-standard download method\";\n    Behaviour_riskScore > 20 | threat_indicators := \"ABNORMAL BEHAVIOR - Activity deviates from 30-day baseline\"\
+          ;\n    * | threat_indicators := \"Activity within expected baseline patterns\";\n}\n| threshold_status_text := if(condition=create_case==true, then=\"MEETS/EXCEEDS\", else=\"BELOW\")\n| entra_display_name\
+          \ := ?entra_display_name\n| entra_job_title := ?entra_job_title\n| entra_office_location := ?entra_office_location\n| ad_entity_name := ?ad_entity_name\n| ad_department := ?ad_department\n| ad_risk_severity\
+          \ := ?ad_risk_severity\n| ad_classification := ?ad_classification\n| ad_domain := ?ad_domain\n| ad_ou := ?ad_ou\n| identity_line := \"\"\n| case {\n    entra_display_name != null AND entra_display_name\
+          \ != \"\" | identity_line := format(format=\"Name: %s\", field=[entra_display_name]);\n    ad_entity_name != null AND ad_entity_name != \"\" | identity_line := format(format=\"Name: %s\", field=[ad_entity_name]);\n\
+          \    user.full_name != null AND user.full_name != \"\" AND user.full_name != \"Unknown\" | identity_line := format(format=\"Name: %s\", field=[user.full_name]);\n    * | identity_line := identity_line;\n\
+          }\n| case {\n    entra_job_title != null AND entra_job_title != \"\" AND identity_line != \"\" | identity_line := format(format=\"%s | Title: %s\", field=[identity_line, entra_job_title]);\n \
+          \   entra_job_title != null AND entra_job_title != \"\" | identity_line := format(format=\"Title: %s\", field=[entra_job_title]);\n    user.job_title != null AND user.job_title != \"\" AND user.job_title\
+          \ != \"Unknown\" AND identity_line != \"\" | identity_line := format(format=\"%s | Title: %s\", field=[identity_line, user.job_title]);\n    user.job_title != null AND user.job_title != \"\" AND\
+          \ user.job_title != \"Unknown\" | identity_line := format(format=\"Title: %s\", field=[user.job_title]);\n    * | identity_line := identity_line;\n}\n| case {\n    ad_department != null AND ad_department\
+          \ != \"\" AND identity_line != \"\" | identity_line := format(format=\"%s | Dept: %s\", field=[identity_line, ad_department]);\n    ad_department != null AND ad_department != \"\" | identity_line\
+          \ := format(format=\"Dept: %s\", field=[ad_department]);\n    user.department != null AND user.department != \"\" AND user.department != \"Unknown\" AND identity_line != \"\" | identity_line :=\
+          \ format(format=\"%s | Dept: %s\", field=[identity_line, user.department]);\n    user.department != null AND user.department != \"\" AND user.department != \"Unknown\" | identity_line := format(format=\"\
+          Dept: %s\", field=[user.department]);\n    * | identity_line := identity_line;\n}\n| case {\n    entra_office_location != null AND entra_office_location != \"\" AND identity_line != \"\" | identity_line\
+          \ := format(format=\"%s | Location: %s\", field=[identity_line, entra_office_location]);\n    entra_office_location != null AND entra_office_location != \"\" | identity_line := format(format=\"\
+          Location: %s\", field=[entra_office_location]);\n    user.location != null AND user.location != \"\" AND identity_line != \"\" | identity_line := format(format=\"%s | Location: %s\", field=[identity_line,\
+          \ user.location]);\n    user.location != null AND user.location != \"\" | identity_line := format(format=\"Location: %s\", field=[user.location]);\n    * | identity_line := identity_line;\n}\n\
+          | case {\n    ad_risk_severity != null AND ad_risk_severity != \"\" AND identity_line != \"\" | identity_line := format(format=\"%s | Risk: %s\", field=[identity_line, ad_risk_severity]);\n  \
+          \  ad_risk_severity != null AND ad_risk_severity != \"\" | identity_line := format(format=\"Risk: %s\", field=[ad_risk_severity]);\n    * | identity_line := identity_line;\n}\n| case {\n    ad_classification\
+          \ != null AND ad_classification != \"\" AND identity_line != \"\" | identity_line := format(format=\"%s | Type: %s\", field=[identity_line, ad_classification]);\n    ad_classification != null\
+          \ AND ad_classification != \"\" | identity_line := format(format=\"Type: %s\", field=[ad_classification]);\n    * | identity_line := identity_line;\n}\n| case {\n    ad_domain != null AND ad_domain\
+          \ != \"\" AND identity_line != \"\" | identity_line := format(format=\"%s | Domain: %s\", field=[identity_line, ad_domain]);\n    ad_domain != null AND ad_domain != \"\" | identity_line := format(format=\"\
+          Domain: %s\", field=[ad_domain]);\n    * | identity_line := identity_line;\n}\n| case {\n    ad_ou != null AND ad_ou != \"\" AND identity_line != \"\" | identity_line := format(format=\"%s | OU:\
+          \ %s\", field=[identity_line, ad_ou]);\n    ad_ou != null AND ad_ou != \"\" | identity_line := format(format=\"OU: %s\", field=[ad_ou]);\n    * | identity_line := identity_line;\n}\n| activity_summary\
+          \ := format(format=\"User %s (%s) %sdownloaded approximately %s across %s files within a 10-minute window from IP %s (%s)\",\n    field=[user.email, user_name_display, host_phrase, TotalDownloadedGB,\
+          \ FileCount, source.ip, location_display])\n| attack_story := format(format=\"User %s %sdownloaded approximately %s across %s files within a 10-minute window from %s using %s. %s\\n\\nThis activity\
+          \ triggered detection because:\\n- Risk Score: %s points (Threshold: %s) - %s\\n- Download Volume: %s detected in 10-minute window\\n- Burst Pattern: %s\\n- Behavioral Analysis: %s\\n- Threat\
+          \ Level: %s\",\n    field=[\n        user.email, host_phrase, TotalDownloadedGB, FileCount, location_display,\n        agent_type, threat_indicators, total_risk_score, threshold_value,\n     \
+          \   threshold_status_text, TotalDownloadedGB, burst_display,\n        Behaviour_riskDescription_display, threat_level\n    ])\n| case_description := format(format=\"=== ATTACK STORY ===\\nUser\
+          \ %s %sdownloaded approximately %s across %s files within a 10-minute window from %s using %s. %s\\n\\nThreat Level: **%s**\\nWhy This Matters: %s\\n\\n=== DETECTION REASONING ===\\nRisk Score:\
+          \ %s points (Threshold: %s) - %s\\n  └─ Breakdown: %s\\n\\nKey Risk Factors:\\n  • Behavioral: %s\\n  • IP Reputation: %s\\n  • Volume: %s detected in 10-minute window\\n  • Burst Pattern: %s\\\
+          n  • Identity: %s (%s risk)\\n\\n=== USER PROFILE ===\\n%s\\n\\n=== NETWORK DETAILS ===\\nSource IP: %s | Location: %s | Historical Baseline: %s\\n\\n=== IP ENRICHMENT (VirusTotal) ===\\nASN Owner:\
+          \ %s\\nCountry: %s\\n\\n=== OTHER DETECTIONS (Last 3 Days) ===\\nScore Impact: +%s pts\\n%s\\n\\nUser Agent: %s\\nAgent Type: %s\",\n    field=[\n        user.email, host_phrase, TotalDownloadedGB,\
+          \ FileCount, location_display,\n        agent_type, threat_indicators, threat_level, verdict_explanation,\n        total_risk_score, threshold_value, threshold_status_text, risk_breakdown,\n \
+          \       Behaviour_riskDescription_display, ioc_verdict, TotalDownloadedGB,\n        burst_display, account_context, user.risk_severity, identity_line,\n        source.ip, location_display, behavior_verdict,\
+          \ vt_as_owner, vt_country,\n        other_det_pts, other_det_summary,\n        user_agent_display, agent_type\n    ])\n| case_title := format(format=\"TEST - %s Risk - %s (%s pts)\",\n    field=[case_priority,\
+          \ user.email, total_risk_score])\n| table([user.email, source.ip, total_risk_score, case_priority, create_case, case_title, case_description, risk_breakdown, ioc_verdict, threshold_explanation,\
+          \ activity_summary, attack_story, threat_level, behavior_verdict, agent_type, user_agent.original, user_agent_display, ip_context, verdict_explanation, other_det_summary])\n| head(1)\n"
+        search_query_args:
+          alertId: '*'
+          create_case_risk_level: '*'
+          hostname: Unknown
+          other_det_count: '0'
+          other_det_score: '0'
+          other_det_summary: None
+          vt_as_owner: Unavailable
+          vt_country: N/A
+        start: 48h
+        tags: []
+    class: Inline.QueryEvent
+    name: CaseRiskAssessment v4 - Enhanced Identity Context
+    next:
+    - data39caseriskassessmentv4_results390_create_case__true
+    properties:
+      ad_classification: ${data['GetUserIdentityContext.Classification']}
+      ad_department: ${data['GetUserIdentityContext.Department']}
+      ad_domain: ${data['GetUserIdentityContext.Domain']}
+      ad_entity_name: ${data['GetUserIdentityContext.EntityName']}
+      ad_ou: ${data['GetUserIdentityContext.Ou']}
+      ad_risk_severity: ${data['GetUserIdentityContext.RiskSeverity']}
+      alertId: ${data['Trigger.Detection.DetectionID']}
+      create_case_risk_level: '40'
+      entra_display_name: ${data['EntraIDGetUserDetails.body.displayName']}
+      entra_job_title: ${data['EntraIDGetUserDetails.body.jobTitle']}
+      entra_office_location: ${data['EntraIDGetUserDetails.body.officeLocation']}
+      hostname: ${data['Trigger.Detection.NGSIEM.HostNames']}
+      other_det_count: '${data[''OtherDetectionsQuery.results''].size() > 0 ? data[''OtherDetectionsQuery.results''][0].other_det_count : ''0''}'
+      other_det_score: '${data[''OtherDetectionsQuery.results''].size() > 0 ? data[''OtherDetectionsQuery.results''][0].other_det_score : ''0''}'
+      other_det_summary: '${data[''OtherDetectionsQuery.results''].size() > 0 ? data[''OtherDetectionsQuery.results''][0].other_det_summary : ''None''}'
+      output_files_only: false
+      vt_as_owner: ${data['VirusTotalIPLookup.body']['data']['attributes']['as_owner']}
+      vt_country: ${data['VirusTotalIPLookup.body']['data']['attributes']['country']}
+      workflow_csv_header_fields: []
+      workflow_export_event_query_results_to_csv: false
+    version_constraint: ~1

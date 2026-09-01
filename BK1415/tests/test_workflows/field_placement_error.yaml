@@ -1,0 +1,27 @@
+# Test workflow with field placement error - the #1 import blocker
+name: Field Placement Error Test
+description: Workflow demonstrating _fields in wrong location causing import failure
+trigger:
+  type: "On demand"
+  parameters:
+    - name: alertId
+      type: investigatableID
+actions:
+  SendEmail:
+    id: "550e8400-e29b-41d4-a716-446655440001"
+    class: "SendEmail"
+    _fields: ["${Trigger.alertId}"]  # WRONG LOCATION - should be inside properties
+    properties:
+      to: ["admin@company.com"]
+      subject: "Alert Notification"
+      msg: "Alert ${Trigger.alertId} detected"
+    version_constraint: ~1
+
+  QueryEvent:
+    id: "550e8400-e29b-41d4-a716-446655440002"
+    class: "Inline.QueryEvent"
+    workflow_csv_header_fields: []  # WRONG LOCATION - should be inside properties
+    properties:
+      device_id: "${Trigger.SensorID}"
+      latest: "${Workflow.Execution.Time}"
+      search_timeframe_minutes: 60

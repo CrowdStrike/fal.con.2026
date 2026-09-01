@@ -1,0 +1,5 @@
+pyyaml>=6.0
+
+# Maintainer tooling only (scripts/fetch_all_activities.py — refreshing
+# known_action_ids.yaml from a live CID). Not required to run the validator.
+crowdstrike-falconpy>=1.3

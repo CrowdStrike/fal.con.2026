@@ -1,0 +1,185 @@
+# Known built-in Falcon Fusion action IDs.
+#
+# These action UUIDs are global Falcon platform activity document IDs — they
+# identify built-in actions that DO NOT need an explicit `class:` field in
+# workflow YAML because Fusion infers the class from the id at import time.
+#
+# The workflow validator suppresses MISSING_ACTION_CLASS (INFO) for any action
+# whose `id:` appears in this file.
+#
+# Source of truth:
+#   - /Users/nchurch/.claude/learnings/fusion-action-docids-purpletunnel.md
+#     (global platform IDs confirmed across multiple CIDs)
+#   - Additional ids observed in ~/clients/*/workflows/*.yaml with >20 usages.
+#
+# Add new entries here as new built-in actions are encountered. Keep the
+# human-readable name as a YAML comment for grep-ability.
+
+builtin_action_ids:
+  # Core platform actions
+  - id: "aadbf530e35fc452a032f5f8acaaac2a"  # Print data
+  - id: "07413ef9ba7c47bf5a242799f59902cc"  # Send Email
+  - id: "702d15788dbbffdf0b68d8e2f3599aa4"  # Create variable
+  - id: "6c6eab39063fa3b72d98c82af60deb8a"  # Update variable
+  - id: "1ba474f407d9228fc8fa02cdce8ae8ef"  # Cloud HTTP Request
+
+  # Lookup / CSV actions
+  - id: "51c4db34ab30465f796d7550f3e3e97b"  # Create lookup file
+  - id: "fe8acd4b4b2a30759745b2fcc6335306"  # Append row to lookup file
+  - id: "3fa82584a1c9103b21fb80477102a05b"  # Overwrite lookup file
+
+  # Detection actions
+  - id: "7b77cb5d5ff2651cc51c7c4c610d54d1"  # Add comment to detection
+  - id: "beb56cc40d334583671ca91e6e390056"  # Set detection status
+  - id: "089d7ff051b274992d1c3e15b59c8f6b"  # Get detection details
+
+  # Case actions
+  - id: "4918bf9d85ecc06388eca16543bdbbdc"  # Create a new Case
+  - id: "42b5eb476d3332ad443831c37eae5954"  # Query cases
+  - id: "153e23685bdb63849f52e3a5642a223d"  # Set case status
+  - id: "b871af828081ca6d346bc846153a0903"  # Set case severity
+  - id: "e381ea1ec32e8edf44b33becae5f9fe7"  # Assign case to user
+  - id: "9ef277cab8186937e5c60a69e05ea4bc"  # Add detections to case
+  - id: "696f57b7cdcd475e5c56e6196836ee39"  # Add tags to case
+  - id: "a16f4fdd1b244b0bfeecd47e25dbe0e0"  # Add comment to case
+  - id: "3dc4a68cf25bf32ceec6588c6d5c8989"  # Get case details
+
+  # Inline query / event search actions
+  - id: "cdf5c3e0d69f156eaaf56c1f5d3f1b66"  # Workflow-specific event query (class: Inline.QueryEvent)
+
+  # Observed frequently in production but name unverified — suppress the
+  # INFO anyway; they were hand-exported from the Falcon console so the id
+  # is authoritative and `class:` is omitted by design.
+  - id: "04c59ceb6dff9e6cd89e5f5cf13121ab"
+  - id: "19c7e2af0a24f468be7797fe180c8329"
+  - id: "316aeaf09741e89b0de4c74b21dcb622"
+  - id: "3c621f56f0d759d443396ef4a66cf2ee"
+  - id: "ace50afa2ea8438162f098b621f790fb"
+  - id: "6265dc947cc2252f74a5f25261ac36a9"
+  - id: "ee79d57ea8134a7d9e81e8027ec7a1a2"
+
+  # --- Auto-discovered 2026-06-08 via fetch_all_activities.py --stable-only ---
+  # Cross-CID-stable platform actions not previously listed. Review names before merge.
+  - id: "de7e76d3051a39d6b9b51ba48b6e930c"  # Active Directory - Add to Group
+  - id: "7e8e6290242d2885293ef9a96e5c82ca"  # Active Directory - Disable Account
+  - id: "c9b660a67d96da88354bf6af2f705369"  # Active Directory - Enable Account
+  - id: "8ecb53650a273d22032941d47320acb4"  # Active Directory - Remove from Group
+  - id: "fa1e3f7566d88d62c8532f4308cecdd1"  # Active Directory - Reset Password
+  - id: "f68f0c1325847fa3d9f2aa9674ca03f6"  # Active Directory - Unlock Account
+  - id: "51b36b12e983920a8055093292633e66"  # Add comment to automated lead
+  - id: "04bc34035e6426c3e1e50a28401d5309"  # Add comment to endpoint detection
+  - id: "44a40a9cff083cd51a6316631a1767ab"  # Add comment to incident
+  - id: "e76f5027deb9bea65309b3ddcffe4538"  # Add endpoint to watchlist
+  - id: "91e6224248076bdea0e79b51f8b8b13a"  # Add events to case
+  - id: "a37b064a5b07e2d0c7cb2b101f0a85f5"  # Add Falcon grouping tags
+  - id: "11c62e126cbf4c7d9ee061d60167c02b"  # Add file to case
+  - id: "fe2174f7c131b6a52eaadf3c43a006e4"  # Add incident tags
+  - id: "c743c5869f236412a75045786daf1b61"  # Add tag to automated lead
+  - id: "6de8a462880ad419680ed5c291b9413f"  # Add tag to detection
+  - id: "be7ac8148f59d753ef4af4ad62570376"  # Add to Zscaler Internet Access restricted user group
+  - id: "9ee925c09e543cc91def5bb406770a79"  # Add user to SCIM group in Netskope
+  - id: "ce847154a40f63fbc77c63da20fc9581"  # Add user to watchlist
+  - id: "f317f0aed9fba188ffe6d1ae79d8b9d2"  # Assign automated lead to a user
+  - id: "f09335301614cc25f0e7f0ac8c827222"  # Assign detection to user
+  - id: "92ba08927ed15223464171c905607635"  # Assign endpoint detection to user
+  - id: "0cce269c4b6a4d9fbf0a7a88875d7791"  # Assign incident to user
+  - id: "02b158005ea40d73ad3a9a0246fbc63c"  # Assign template to case
+  - id: "4441253c1e9b14251945c252233ad42b"  # Check for sample
+  - id: "ef45109d67d20d0db778d3a259cf3dcc"  # Clear Okta user sessions
+  - id: "45323663768751678799ecff5364efde"  # Collect human response
+  - id: "bec9fbeb4999d207937854fd56088107"  # Contain device
+  - id: "ecdace64ddcdc78030544a75fa766b0e"  # Create Custom Domain IOC
+  - id: "557d9de82413677873ceb2e0d5480507"  # Create Custom Hash IOC
+  - id: "a3d7ed4a02bcfa221d485638860ee853"  # Create Custom IP IOC
+  - id: "63d4404088e8c574aeb17997c51d2fb7"  # Create FileVantage changes report
+  - id: "ad9b77de3da84531b79740e5b4076571"  # CrowdStrike HTTP Request
+  - id: "3e4c87af9b41bf876a6a35a069db2251"  # Delete incident tags
+  - id: "ec1e4739a14002a587308433614aeebd"  # Delete lookup file
+  - id: "68ffa99af40c84b36462daa076f535d0"  # Device Query
+  - id: "41e7d989db955e94ac9a36d1c24f46f4"  # Find Active Directory password updates
+  - id: "4dffee18482299494bb836420daa6d00"  # Find command line history
+  - id: "9c2f8fbce85025b6e3d8fee93f56df50"  # Find logins for a user account across hosts
+  - id: "69d872bffa2d42d7af42c21263922f16"  # Find phishing emails processed by workflows
+  - id: "ff93e461a36e18e55193babd3b400343"  # Find recent logins for a host
+  - id: "cdb8b1c6c8db95d1e3855b26a077773e"  # Get Active Directory service access requests based on UserSID
+  - id: "d396c6811c518bf0b67a262deddcc006"  # Get case template
+  - id: "06b30b946b4f9d5ba0bdb585f8965f11"  # Get connected USB drives
+  - id: "f30efd691a36b5cd41a2b3c90dc3471a"  # Get custom IOA rule
+  - id: "7dbcdacaaab313dcf18e87fd23349b10"  # Get customer details
+  - id: "d23a885c8fa098ea4308df91b98a14f1"  # Get devices associated with a domain
+  - id: "27a62203a19ce3a579488c8755d4869f"  # Get devices associated with a sha256 hash
+  - id: "3a2ce7afd768130de21bd61cb8e8eaba"  # Get devices associated with ipv4 address
+  - id: "8cf2d108a75d144c8cfd62e104fb115b"  # Get endpoint identity context
+  - id: "3bf73d1e9ee83b1d507c333680fc3d94"  # Get file
+  - id: "dfed4dc4faba7347f045ac0e1ed7ae71"  # Get file writes
+  - id: "449c02ec243b3e617379b8ed3da68632"  # Get parent process
+  - id: "4fac46408209749bfb3bb8daf5a8de15"  # Get process details
+  - id: "e619c5abe6cb4ce1cba25358ffe45b58"  # Get process DNS requests
+  - id: "9d3fe42e9de137aa5ac821fbcb15446f"  # Get process executable file writes
+  - id: "4d6e93b3e4e7a9af1e5f1790ca032e52"  # Get process file writes
+  - id: "86415bac7e836dbdd7454d1875bd78d5"  # Get process injection
+  - id: "86d934744cdb9391a7589ffba1c7d315"  # Get process network connections
+  - id: "39ebbf77fd1d680c5ecbc790659dd4b0"  # Get processes associated with a sha256 hash
+  - id: "cd1d6563cf947d3eafd43f1ccc572796"  # Get processes associated with an ioc
+  - id: "2cccc88802d047cb00433aefb12678ec"  # Get sandbox quota
+  - id: "eb56a41fba048ba9e52e5436a2f0f7c7"  # Get sensor tampering operations
+  - id: "2459d5cf683dd4c1fb2d7dfafc4fc637"  # Hide or unhide detection in Falcon console
+  - id: "c8a7387a1f1c71679ac00849e192c92d"  # Identity users query
+  - id: "9be6b7b4040e425da0747d11a4c99fce"  # Investigate case with Charlotte AI
+  - id: "5f0be43d535f7f082ee6c3b203e2870e"  # Investigate with Charlotte AI
+  - id: "9ac54d8989c68dbf601acffe8444f7dc"  # Kill process
+  - id: "7de24e850dcfbb0de34471b5ef9b79a0"  # Lift Containment
+  - id: "08277433694a898fee7a993d614d9836"  # Loop break
+  - id: "7d2135c1f32eba03b5ada46f093e90e5"  # MFA challenge
+  - id: "50b8a7cc77ea4ebb9d0bbe96d8def095"  # On-Premises HTTP Request
+  - id: "80405868c341e47fde57c60d3eebf0f9"  # Process memory dump
+  - id: "a29b38809708ffc5fb18a03676520b1a"  # Put and run file
+  - id: "1f4e86048c1e676a59f60e961a8c0c15"  # Put file
+  - id: "d932fc4f4443a30ab68760386075460f"  # QuickScan Submit file
+  - id: "426207d14ce7b19a03723ff7e37ef2cb"  # QuickScan Submit SHA256
+  - id: "a895d0f52f55ae714c102d90627765c8"  # Remediate finding
+  - id: "7a3abed8929311362c5cd167473ad81b"  # Remove directory
+  - id: "6960ff058d40d96a8c80044b58c40933"  # Remove endpoint from watchlist
+  - id: "b64ae82fb55eb05505a222bb9be0b466"  # Remove Falcon grouping tags
+  - id: "1bf5b9585917e51f84f5c9f2ea1aea54"  # Remove file
+  - id: "bcad137bd0dcd1a0b6b1bb214e6531af"  # Remove tags from case
+  - id: "b442ac3b27ad738c1d4a3a8fedd1e0bb"  # Remove user from SCIM group in Netskope
+  - id: "844dcff30c42cba24e501be8a6cf2577"  # Remove user from watchlist
+  - id: "e9dec0f0245b35b7f28195a2789c8389"  # Request human input - BMC Helix ITSM - Add Attachment To Incident
+  - id: "3ee051cdb781f95fc8f1619270f2a27e"  # Request human input - BMC Helix ITSM - Create Incident
+  - id: "cb538953161dd9a98accc624be01ce00"  # Request human input - BMC Helix ITSM - Create Incident With Attachment
+  - id: "36de114099fb16abd97ad34fc648867b"  # Request human input - Call webhook
+  - id: "3104cd418bb314bd49f14f495ba12201"  # Request human input - Create a PagerDuty incident
+  - id: "e3f3a7c54e95870a741c88784ae650b7"  # Request human input - Create BMC Helix ITSM incident with attachment
+  - id: "da3d438fcce940e2495f93c51c70aaaa"  # Request human input - Create Jira issue
+  - id: "b558e7b1eea928de0921dfa5bf4563f3"  # Request human input - Create ServiceNow incident
+  - id: "057c22cc16796bdcefe2e5fcbaeddd68"  # Request human input - Form
+  - id: "1ccbf7e0e266f15efd77da1030f61c94"  # Request human input - Form
+  - id: "d6731c10b24834e2e0f4bd9d390a29c8"  # Request human input - Send email
+  - id: "b90f22b4b323d515af6d8585b6fa12fe"  # Request human input - Send Microsoft Teams message
+  - id: "67f9ed03010a60f58ca4b1e49c593589"  # Request human input - Send Microsoft Teams message (deprecated)
+  - id: "1ecc2f19f3deb1c607c07a2d755eb538"  # Request human input - Send Slack message
+  - id: "f6585558ca63c5cbde79062a0efb67d0"  # Reset Okta MFA factors
+  - id: "189c942032615d18f6691c11fc77f731"  # Reset Okta Password
+  - id: "ca5c488d714a76d49f29a7c8b88c5fca"  # Resume after Error
+  - id: "b274a384d3c5b47c2e4586e6ebb2fdfd"  # Retrieve active network connections
+  - id: "76f67c8290f238d5e2f73074a7dfa151"  # Retrieve executed processes
+  - id: "26cd048c03f6be498e6ccccd6be2bb53"  # Retrieve running processes
+  - id: "4a4627eb1cb7c11a1e4859c479451178"  # Revoke JIT permission assignments
+  - id: "79149e361f8e47bb363847f43009cd1c"  # Run file
+  - id: "6c83acf1b4bb0224e7c5f521d6ca2251"  # Scan device
+  - id: "1f4bfd641bd8a94367c761a7189121d2"  # Set automated lead status
+  - id: "3edaec50dd8c799f6e965430f98d9b18"  # Set case description
+  - id: "c5ea5ef1ec73cf11b9eecf069bbd97f1"  # Set endpoint detection status
+  - id: "033170ab71b2d9f851f622d2ebb283d1"  # Set incident status
+  - id: "4f1af1ae4c13dc1e3bcd725f8dc0f63b"  # Sleep
+  - id: "1bb02507530a9a7bbd08ed8793f528f7"  # Submit file to sandbox
+  - id: "e32efae86e0b6a9e3eff436fa43c0aeb"  # Submit SHA256 to sandbox
+  - id: "04dabe92e4aba77982c51af9e58edbfd"  # Submit URL to sandbox
+  - id: "d61f6192d1ba3fa49501c762ab699f0b"  # Update content policy
+  - id: "8f3e71c92a6d4b89f012345678901234"  # Update entity mapping
+  - id: "85e1f3c96a523ff599dbca0e2ac71a90"  # Update incident description
+  - id: "9dd4510f7a10041a6cb50c39016c3141"  # Update incident name
+  - id: "bd97b8cdd275c4aa09564189f725ae24"  # Update lookup file (CSV only)
+  - id: "977df23703218cfd2775496b1d8a9600"  # Workflow execution query
+

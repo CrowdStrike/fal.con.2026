@@ -1,0 +1,21 @@
+# Test workflow with SendEmail validation issues
+name: SendEmail Validation Test
+description: Workflow demonstrating common SendEmail validation failures
+trigger:
+  type: "Manual"
+actions:
+  BadSendEmail1:
+    id: "550e8400-e29b-41d4-a716-446655440003"
+    class: "SendEmail"
+    properties:
+      # Missing 'to' field - should trigger MISSING_SENDEMAIL_REQUIRED
+      subject: "Missing Recipients"
+      msg: "This email has no recipients"
+
+  BadSendEmail2:
+    id: "550e8400-e29b-41d4-a716-446655440004"
+    class: "SendEmail"
+    properties:
+      to: []  # Empty recipients - should trigger EMPTY_EMAIL_RECIPIENTS
+      subject: "Empty Recipients"
+      msg: "This email has empty recipients array"

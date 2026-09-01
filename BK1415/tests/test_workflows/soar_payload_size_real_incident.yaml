@@ -1,0 +1,318 @@
+# This is an exported workflow. Editing this file is not recommended.
+
+name: Defender-Sync
+description: |-
+    Production — Scheduled Defender Sync workflow.
+    Runs hourly, finds NG-SIEM detections whose Defender incident or alert was resolved,
+    adds an enriched comment, closes the detection, and tags it to prevent reprocessing.
+    Dedup: tags detections with 'defender-sync', skips already-tagged detections.
+    v2: Adds $skip pagination (2 pages x 50 = 100 items per type per run)
+    to handle daily volumes exceeding the MS Graph $top: 50 cap.
+    Converted from DryRun after client approval (Mar 19).
+trigger:
+    next:
+        - DeclareLookbackDate
+    event: Schedule
+    name: Scheduled
+    schedule:
+        time_cycle: 33 12/1 * * *
+        start_date: ""
+        end_date: ""
+        tz: America/New_York
+        skip_concurrent: false
+    type: Scheduled
+actions:
+    ComputeLookbackDate:
+        id: 6c6eab39063fa3b72d98c82af60deb8a
+        class: UpdateVariable
+        name: Compute lookback date from lookbackDays
+        next:
+            - ListResolvedDefenderIncidents
+        properties:
+            WorkflowCustomVariable:
+                lookbackDate: ${cs.timestamp.format(cs.timestamp.now() - duration('86400s'), 'RFC3339')}
+        version_constraint: ~1
+    CreateAlertLookupFile:
+        id: 51c4db34ab30465f796d7550f3e3e97b
+        class: CreateLookupFile
+        name: Write resolved alert IDs to lookup file
+        next:
+            - GetFilteredDefenderDetections
+        properties:
+            lookup_file_content_text: '${"alert_id,alert_resolved_date,alert_classification,alert_determination,alert_assigned_to,alert_web_url\n" + data["ListResolvedDefenderAlerts.API_Integration.Custom_Microsoft_Defender_For_Office_365_API''s.MS_Defender_for_Office_365_-_List_Alerts.body.value"].map(a, a.id + "," + (has(a.resolvedDateTime) && a.resolvedDateTime != null ? a.resolvedDateTime : "unknown") + "," + (has(a.classification) && a.classification != null ? string(a.classification) : "none") + "," + (has(a.determination) && a.determination != null ? string(a.determination) : "none") + "," + (has(a.assignedTo) && a.assignedTo != null ? string(a.assignedTo) : "unknown") + ",https://security.microsoft.com/incidents/" + (has(a.incidentId) && a.incidentId != null ? string(a.incidentId) : "0")).join("\n") + "\n" + data["ListResolvedDefenderAlertsPage2.API_Integration.Custom_Microsoft_Defender_For_Office_365_API''s.MS_Defender_for_Office_365_-_List_Alerts.body.value"].map(a, a.id + "," + (has(a.resolvedDateTime) && a.resolvedDateTime != null ? a.resolvedDateTime : "unknown") + "," + (has(a.classification) && a.classification != null ? string(a.classification) : "none") + "," + (has(a.determination) && a.determination != null ? string(a.determination) : "none") + "," + (has(a.assignedTo) && a.assignedTo != null ? string(a.assignedTo) : "unknown") + ",https://security.microsoft.com/incidents/" + (has(a.incidentId) && a.incidentId != null ? string(a.incidentId) : "0")).join("\n")}'
+            lookup_file_content_type: text
+            lookup_file_name: defender_alerts_${Workflow.Execution.ID}.csv
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    CreateIncidentLookupFile:
+        id: 51c4db34ab30465f796d7550f3e3e97b
+        class: CreateLookupFile
+        name: Write resolved incident IDs to lookup file
+        next:
+            - ListResolvedDefenderAlerts
+        properties:
+            lookup_file_content_text: '${"incident_id,inc_resolved_date,inc_resolved_by,inc_web_url\n" + data["ListResolvedDefenderIncidents.API_Integration.Custom_Microsoft_Defender_For_Office_365_API''s.MS_Defender_for_Office_365_-_List_Incidents.body.value"].map(inc, inc.id + "," + (has(inc.lastUpdateDateTime) && inc.lastUpdateDateTime != null ? inc.lastUpdateDateTime : "unknown") + "," + (has(inc.lastModifiedBy) && inc.lastModifiedBy != null ? string(inc.lastModifiedBy) : "unknown") + ",https://security.microsoft.com/incidents/" + inc.id).join("\n") + "\n" + data["ListResolvedDefenderIncidentsPage2.API_Integration.Custom_Microsoft_Defender_For_Office_365_API''s.MS_Defender_for_Office_365_-_List_Incidents.body.value"].map(inc, inc.id + "," + (has(inc.lastUpdateDateTime) && inc.lastUpdateDateTime != null ? inc.lastUpdateDateTime : "unknown") + "," + (has(inc.lastModifiedBy) && inc.lastModifiedBy != null ? string(inc.lastModifiedBy) : "unknown") + ",https://security.microsoft.com/incidents/" + inc.id).join("\n")}'
+            lookup_file_content_type: text
+            lookup_file_name: defender_incidents_${Workflow.Execution.ID}.csv
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    DeclareLookbackDate:
+        id: 702d15788dbbffdf0b68d8e2f3599aa4
+        class: CreateVariable
+        name: Declare lookback date variable
+        next:
+            - ComputeLookbackDate
+        properties:
+            variable_schema:
+                properties:
+                    lookbackDate:
+                        type: string
+                type: object
+        version_constraint: ~1
+    GetFilteredDefenderDetections:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    alerts_file:
+                        type: string
+                        title: Resolved Alerts Lookup Filename
+                        default: defender_alerts_NOMATCH.csv
+                    incidents_file:
+                        type: string
+                        title: Resolved Incidents Lookup Filename
+                        default: defender_incidents_NOMATCH.csv
+                required:
+                    - incidents_file
+                    - alerts_file
+                type: object
+                description: Lookup files containing resolved incident/alert IDs
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    alert_id:
+                        type: string
+                        title: Alert ID
+                    assigned_to:
+                        type: string
+                        title: Assigned To
+                    classification:
+                        type: string
+                        title: Classification
+                    detection_id:
+                        type: string
+                        title: Detection ID
+                    determination:
+                        type: string
+                        title: Determination
+                    incident_id:
+                        type: string
+                        title: Incident ID
+                    match_type:
+                        type: string
+                        title: Match Type
+                    resolved_date:
+                        type: string
+                        title: Resolved Date
+                    web_url:
+                        type: string
+                        title: Defender URL
+                required:
+                    - detection_id
+                    - incident_id
+                type: object
+                description: MS Defender detections matched by resolved incident or alert
+            config:
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Get Defender detections matched by resolved incidents or alerts
+                search_query: |-
+                    #repo = xdr_indicatorsrepo
+                    Ngsiem.event.product = "Microsoft Defender"
+                    Vendor.incidentId = *
+                    | detection_id := Ngsiem.alert.id
+                    | incident_id := Vendor.incidentId
+                    | alert_id := Vendor.id
+                    | groupBy([detection_id, incident_id, alert_id], limit=max)
+                    | case {
+                        match(table=?incidents_file, field=[incident_id], include=[inc_resolved_date, inc_resolved_by, inc_web_url])
+                          | match_type := "incident"
+                          | resolved_date := inc_resolved_date
+                          | classification := "N/A (incident-level)"
+                          | determination := inc_resolved_by
+                          | assigned_to := inc_resolved_by
+                          | web_url := inc_web_url;
+                        match(table=?alerts_file, field=[alert_id], include=[alert_resolved_date, alert_classification, alert_determination, alert_assigned_to, alert_web_url])
+                          | match_type := "alert"
+                          | resolved_date := alert_resolved_date
+                          | classification := alert_classification
+                          | determination := alert_determination
+                          | assigned_to := alert_assigned_to
+                          | web_url := alert_web_url
+                      }
+                    | select([detection_id, incident_id, alert_id, match_type, resolved_date, classification, determination, assigned_to, web_url])
+                search_query_args:
+                    alerts_file: defender_alerts_NOMATCH.csv
+                    incidents_file: defender_incidents_NOMATCH.csv
+                start: 90d
+                tags: []
+        class: Inline.QueryEvent
+        name: Get detections for resolved incidents or alerts
+        next:
+            - CloseLoop
+        properties:
+            alerts_file: defender_alerts_${Workflow.Execution.ID}.csv
+            incidents_file: defender_incidents_${Workflow.Execution.ID}.csv
+            output_files_only: false
+            workflow_csv_header_fields:
+                - detection_id
+                - incident_id
+                - alert_id
+                - match_type
+                - resolved_date
+                - classification
+                - determination
+                - assigned_to
+                - web_url
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    ListResolvedDefenderAlerts:
+        id: 020b7bdb5683467eab956924a8ddbacc
+        name: List resolved Defender alerts (page 1)
+        next:
+            - ListResolvedDefenderAlertsPage2
+        properties:
+            config_id: 872112c4c92b4227a826412fe8effe3f
+            params:
+                query:
+                    $count: "true"
+                    $filter: status eq 'resolved' and lastUpdateDateTime gt ${data['WorkflowCustomVariable.lookbackDate']}
+                    $orderby: lastUpdateDateTime desc
+                    $skip: "0"
+                    $top: 50
+        version_constraint: ~0
+    ListResolvedDefenderAlertsPage2:
+        id: 020b7bdb5683467eab956924a8ddbacc
+        name: List resolved Defender alerts (page 2)
+        next:
+            - CreateAlertLookupFile
+        properties:
+            config_id: 872112c4c92b4227a826412fe8effe3f
+            params:
+                query:
+                    $count: "true"
+                    $filter: status eq 'resolved' and lastUpdateDateTime gt ${data['WorkflowCustomVariable.lookbackDate']}
+                    $orderby: lastUpdateDateTime desc
+                    $skip: "50"
+                    $top: 50
+        version_constraint: ~0
+    ListResolvedDefenderIncidents:
+        id: ee79d57ea8134a7d9e81e8027ec7a1a2
+        name: List resolved Defender incidents (page 1)
+        next:
+            - ListResolvedDefenderIncidentsPage2
+        properties:
+            config_id: 872112c4c92b4227a826412fe8effe3f
+            params:
+                query:
+                    $count: "true"
+                    $filter: status eq 'resolved' and lastUpdateDateTime gt ${data['WorkflowCustomVariable.lookbackDate']}
+                    $orderby: lastUpdateDateTime desc
+                    $skip: "0"
+                    $top: 50
+        version_constraint: ~0
+    ListResolvedDefenderIncidentsPage2:
+        id: ee79d57ea8134a7d9e81e8027ec7a1a2
+        name: List resolved Defender incidents (page 2)
+        next:
+            - CreateIncidentLookupFile
+        properties:
+            config_id: 872112c4c92b4227a826412fe8effe3f
+            params:
+                query:
+                    $count: "true"
+                    $filter: status eq 'resolved' and lastUpdateDateTime gt ${data['WorkflowCustomVariable.lookbackDate']}
+                    $orderby: lastUpdateDateTime desc
+                    $skip: "50"
+                    $top: 50
+        version_constraint: ~0
+loops:
+    CloseLoop:
+        display: For each matched detection — comment + close + tag
+        name: For each matched detection — comment + close + tag
+        for:
+            input: GetFilteredDefenderDetections.results
+            continue_on_partial_execution: true
+            max_iteration_count: 5000
+            sequential: true
+        trigger:
+            next:
+                - GetDetectionDetails
+        actions:
+            AddCommentToDetection:
+                id: 7b77cb5d5ff2651cc51c7c4c610d54d1
+                name: Add comment to detection
+                next:
+                    - SetDetectionStatus
+                properties:
+                    comment: |-
+                        [Defender Sync] Auto-closed — resolved in MS Defender
+
+                          Resolved by:     ${data['GetFilteredDefenderDetections.results.#'].assigned_to}
+                          Resolved:        ${data['GetFilteredDefenderDetections.results.#'].resolved_date}
+                          Classification:  ${data['GetFilteredDefenderDetections.results.#'].classification}
+                          Determination:   ${data['GetFilteredDefenderDetections.results.#'].determination}
+                          Defender:        ${data['GetFilteredDefenderDetections.results.#'].web_url}
+
+                          This detection was automatically closed because the
+                          corresponding Defender ${data['GetFilteredDefenderDetections.results.#'].match_type} was resolved by the SOC.
+                    investigatable_id: ${data['GetFilteredDefenderDetections.results.#.detection_id']}
+                version_constraint: ~0
+            AddTagToDetection:
+                id: 6de8a462880ad419680ed5c291b9413f
+                name: Add tag to detection
+                properties:
+                    investigatable_id: ${data['GetFilteredDefenderDetections.results.#.detection_id']}
+                    tag: defender-sync
+                version_constraint: ~0
+            GetDetectionDetails:
+                id: 089d7ff051b274992d1c3e15b59c8f6b
+                name: Get detection details
+                next:
+                    - tags_does_not_include_defender_sync
+                properties:
+                    investigatable_id: ${data['GetFilteredDefenderDetections.results.#.detection_id']}
+                version_constraint: ~1
+            PrintData:
+                id: aadbf530e35fc452a032f5f8acaaac2a
+                default_name: Print data
+                name: Print data
+                properties:
+                    fields:
+                        - ${GetDetectionDetails.name}
+                    text_data: Detection was already processed by Defender-Sync
+                version_constraint: ~1
+            SetDetectionStatus:
+                id: beb56cc40d334583671ca91e6e390056
+                name: Set detection status to closed
+                next:
+                    - AddTagToDetection
+                properties:
+                    investigatable_id: ${data['GetFilteredDefenderDetections.results.#.detection_id']}
+                    status: closed
+                version_constraint: ~0
+        conditions:
+            tags_does_not_include_defender_sync:
+                next:
+                    - AddCommentToDetection
+                expression: GetDetectionDetails.tags:!['defender-sync']
+                display:
+                    - Tags does not include defender-sync
+                else:
+                    - PrintData
+output_fields:
+    - GetFilteredDefenderDetections.results
+    - GetFilteredDefenderDetections.event_count
+    - WorkflowCustomVariable.lookbackDate

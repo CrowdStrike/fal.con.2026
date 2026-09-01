@@ -1,0 +1,66 @@
+# Test fixture: CreateLookupFile combining multiple SOAR page outputs
+# This SHOULD trigger SOAR_MULTI_PAGE_LOOKUP_RISK warning.
+#
+# Real-world failure: Defender-Sync v2 (2026-03-26)
+# Combined 2 pages of MS Graph alert objects (~14KB each, 50/page = ~1.2MB)
+# in one CreateLookupFile CEL expression, exceeding Fusion's ~1MB message limit.
+# Error: error_code 500, "message size is too large"
+
+name: soar-payload-size-bad
+description: Test workflow with multi-source SOAR lookup (should warn)
+trigger:
+    next:
+        - ListResolvedDefenderAlerts
+    event: Schedule
+    name: Scheduled
+    schedule:
+        time_cycle: 33 12/1 * * *
+    type: Scheduled
+actions:
+    ListResolvedDefenderAlerts:
+        id: 020b7bdb5683467eab956924a8ddbacc
+        name: List resolved Defender alerts (page 1)
+        next:
+            - ListResolvedDefenderAlertsPage2
+        properties:
+            config_id: 872112c4c92b4227a826412fe8effe3f
+            params:
+                query:
+                    $filter: status eq 'resolved'
+                    $skip: "0"
+                    $top: 50
+        version_constraint: ~0
+    ListResolvedDefenderAlertsPage2:
+        id: 020b7bdb5683467eab956924a8ddbacc
+        name: List resolved Defender alerts (page 2)
+        next:
+            - CreateAlertLookupFile
+        properties:
+            config_id: 872112c4c92b4227a826412fe8effe3f
+            params:
+                query:
+                    $filter: status eq 'resolved'
+                    $skip: "50"
+                    $top: 50
+        version_constraint: ~0
+    # BAD: This CreateLookupFile references TWO SOAR action outputs in one CEL expression.
+    # Both pages' full API responses (~700KB + ~467KB) are in the action's context.
+    CreateAlertLookupFile:
+        id: 51c4db34ab30465f796d7550f3e3e97b
+        class: CreateLookupFile
+        name: Write resolved alert IDs to lookup file
+        next:
+            - DoSomething
+        properties:
+            lookup_file_content_text: '${"alert_id,alert_resolved_date\n" + data["ListResolvedDefenderAlerts.API_Integration.Custom_Microsoft_Defender_For_Office_365_API''s.MS_Defender_for_Office_365_-_List_Alerts.body.value"].map(a, a.id + "," + a.resolvedDateTime).join("\n") + "\n" + data["ListResolvedDefenderAlertsPage2.API_Integration.Custom_Microsoft_Defender_For_Office_365_API''s.MS_Defender_for_Office_365_-_List_Alerts.body.value"].map(a, a.id + "," + a.resolvedDateTime).join("\n")}'
+            lookup_file_content_type: text
+            lookup_file_name: defender_alerts_${Workflow.Execution.ID}.csv
+            lookup_file_repo: search-all
+        version_constraint: ~1
+    DoSomething:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        class: PrintData
+        name: Print data
+        properties:
+            text_data: done
+        version_constraint: ~1

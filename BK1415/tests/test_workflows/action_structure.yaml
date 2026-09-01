@@ -1,0 +1,38 @@
+# Test workflow with action structure issues - built-in vs custom
+name: Action Structure Test
+description: Workflow demonstrating built-in vs custom action handling
+trigger:
+  type: "Scheduled"
+  parameters:
+    schedule: "0 9 * * *"
+actions:
+  # Built-in actions - should NOT require 'class' field
+  CreateVariable:
+    id: "550e8400-e29b-41d4-a716-446655440007"
+    properties:
+      variable_name: "testVar"
+      variable_value: "testValue"
+
+  UpdateVariable:
+    id: "550e8400-e29b-41d4-a716-446655440008"
+    properties:
+      variable_name: "testVar"
+      variable_value: "updatedValue"
+
+  Decision:
+    id: "550e8400-e29b-41d4-a716-446655440009"
+    properties:
+      condition: "${testVar} == 'updatedValue'"
+
+  # Custom actions - SHOULD require 'class' field
+  MissingClassAction:
+    id: "550e8400-e29b-41d4-a716-44665544000a"
+    # Missing 'class' field - should trigger validation error for custom actions
+    properties:
+      some_property: "some_value"
+
+  ValidCustomAction:
+    id: "550e8400-e29b-41d4-a716-44665544000b"
+    class: "Custom.ActionClass"
+    properties:
+      some_property: "some_value"

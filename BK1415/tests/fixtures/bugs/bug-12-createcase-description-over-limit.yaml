@@ -1,0 +1,2083 @@
+# MMB v5.6.0 TEST - Detection-triggered with TEST prefixes for development/validation
+# Companion production workflow: MMB_v5.2.2.yaml (detection-triggered, no TEST prefixes)
+# Changes from v5.5.0: Early detection type identification, sibling detection close path,
+#   case tag isolation (MMB-TEST-v5), removed ExitNonPrimaryDetection
+
+name: TEST-MMBv5.8.0-Mass-Mailing-Behavior
+description: 'Auto-triggers on "Email sending limit exceeded" detections. Mass Mailing Behavior (MMB) v5.5.0 — Incident-ID-based deduplication eliminates duplicate executions. Enriches user context, runs 12 parallel branches (auth, recent detections, email baseline, IP/geo, email content, email subjects, mailbox rules, alert history, client agents, Defender enrichment, sign-in IP → VT lookup, XDR recipient count), computes a 5-category risk score (0-116), routes HIGH/MEDIUM to case creation with dedup or LOW to comment-only, and auto-closes companion incident-level detection. v5.5.0: 2h window anchored to detection time via parseTimestamp, empty results guard on QueryCasesByIncidentTag/CreateANewCase incident tags.'
+trigger:
+    next:
+        - detection_name_matches_email_sending_limit
+    event: Investigatable
+    name: Detection > NG-SIEM Detection
+    type: Signal
+    version_constraint: ~1
+actions:
+    AddCommentToCase:
+        id: a16f4fdd1b244b0bfeecd47e25dbe0e0
+        name: Add Comment to Case - Initial Detection
+        next:
+            - AddCommentToDetectionForCase
+        properties:
+            case_id: ${CreateANewCase.id}
+            comment: |
+                ${data['CalculateRiskScore.results'][0]['attack_story']}
+
+                Risk Level ${data['CalculateRiskScore.results'][0]['risk_level']} (score ${data['CalculateRiskScore.results'][0]['risk_score']}/116) meets case creation threshold (>= 20).
+
+                Detection ID: ${Trigger.Detection.DetectionID}
+
+                User: ${data['WorkflowCustomVariable.UserEmail']}
+
+                Activity Window: ${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['activity_start'] + ' to ' + data['QueryDefenderEnrichment.results'][0]['activity_end'] : 'N/A'}
+
+                Defender Incident: ${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['defender_portal_url'] : 'N/A'}
+
+                Defender Incident ID: ${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['defender_incident_id'] : 'N/A'}
+
+                Scoring: Vol ${data['CalculateRiskScore.results'][0]['email_volume_score']}/40 | Content ${data['CalculateRiskScore.results'][0]['email_content_score']}/15 | Auth ${data['CalculateRiskScore.results'][0]['auth_risk_score']}/26 | Client ${data['CalculateRiskScore.results'][0]['client_agent_score']}/5 | Mailbox ${data['CalculateRiskScore.results'][0]['mailbox_rules_score']}/15 | Alerts ${data['CalculateRiskScore.results'][0]['alerts_correlation_score']}/15 | Mitigating ${data['CalculateRiskScore.results'][0]['hygiene_bonus']} (${data['CalculateRiskScore.results'][0]['hygiene_label']})
+
+                IP Enrichment (VT): Primary IP ${data['CalculateRiskScore.results'][0]['primary_ip']} | ASN: ${data['CalculateRiskScore.results'][0]['vt_as_owner']} | Country: ${data['CalculateRiskScore.results'][0]['vt_country']} | Reputation: ${data['CalculateRiskScore.results'][0]['vt_reputation']}
+                Low-freq IPs (24h): ${data['CalculateRiskScore.results'][0]['low_freq_ip_list']}
+
+                Recent Detections (3d):
+                "${data['QueryRecentDetections.results'].size() > 0 ? data['QueryRecentDetections.results'][0]['detection_list'] : 'No recent detections'}"
+        version_constraint: ~1
+    AddCommentToDetection:
+        id: 7b77cb5d5ff2651cc51c7c4c610d54d1
+        name: Add comment to detection - LOW risk
+        properties:
+            comment: 'MMB ${data[''CalculateRiskScore.results''][0][''risk_level'']} (${data[''CalculateRiskScore.results''][0][''risk_score'']}/116): ${data[''CalculateRiskScore.results''][0][''attack_story'']} | Defender: ${data[''QueryDefenderEnrichment.results''].size() > 0 ? data[''QueryDefenderEnrichment.results''][0][''defender_portal_url''] : ''N/A''} | Defender ID: ${data[''QueryDefenderEnrichment.results''].size() > 0 ? data[''QueryDefenderEnrichment.results''][0][''defender_incident_id''] : ''N/A''}'
+            investigatable_id: ${Trigger.Detection.DetectionID}
+        version_constraint: ~0
+    AddCommentToDetectionForCase:
+        id: 7b77cb5d5ff2651cc51c7c4c610d54d1
+        name: Add comment to detection - case created
+        next:
+            - SetDetectionStatus
+        properties:
+            _fields:
+                - ${CreateANewCase.id}
+            comment: 'MMB: Closing detection - added to case:'
+            investigatable_id: ${Trigger.Detection.DetectionID}
+        version_constraint: ~0
+    AddCommentToDetectionForExistingCase:
+        id: 7b77cb5d5ff2651cc51c7c4c610d54d1
+        name: Add comment to detection - existing case
+        next:
+            - SetDetectionStatus2
+        properties:
+            _fields:
+                - "${data['QueryCasesByIncidentTag.cases'].size() > 0 ? data['QueryCasesByIncidentTag.cases'][0] : data['QueryCasesByUser.cases'][0]}"
+            comment: 'MMB: Closing detection - added to existing case:'
+            investigatable_id: ${Trigger.Detection.DetectionID}
+        version_constraint: ~0
+    AddCompanionClosureComment:
+        id: 7b77cb5d5ff2651cc51c7c4c610d54d1
+        name: Add comment to detection - companion closed
+        continue_on_error: true
+        next:
+            - RegularUserComplete
+        properties:
+            comment: "MMB: Auto-closed companion detection ${data['QueryCompanionDetection.results'][0]['companion_detection_id']} (Defender incident ${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['defender_incident_id'] : 'N/A'})"
+            investigatable_id: ${Trigger.Detection.DetectionID}
+        version_constraint: ~0
+    CloseSiblingComment:
+        id: 7b77cb5d5ff2651cc51c7c4c610d54d1
+        name: Comment - non-primary sibling detection
+        next:
+            - CloseSiblingDetection
+        properties:
+            comment: |
+                MMB: Non-primary sibling detection (auto-closed).
+                This detection is a duplicate XDR indicator for the same incident.
+                The primary defender.alerts detection handles enrichment and case creation.
+                Dataset: ${data['QueryDetectionDataset.results'].size() > 0 ? data['QueryDetectionDataset.results'][0]['dataset'] : 'saas-security (no dataset)'}
+            investigatable_id: ${Trigger.Detection.DetectionID}
+        version_constraint: ~0
+    CloseSiblingDetection:
+        id: beb56cc40d334583671ca91e6e390056
+        name: Close detection (non-primary sibling)
+        properties:
+            investigatable_id: ${Trigger.Detection.DetectionID}
+            status: closed
+        version_constraint: ~0
+    AddDetectionsToCase:
+        id: 9ef277cab8186937e5c60a69e05ea4bc
+        name: Add detections to case
+        next:
+            - AddCommentToDetectionForExistingCase
+        properties:
+            case_id: "${data['QueryCasesByIncidentTag.cases'].size() > 0 ? data['QueryCasesByIncidentTag.cases'][0] : data['QueryCasesByUser.cases'][0]}"
+            detections:
+                - ${Trigger.Detection.DetectionID}
+        version_constraint: ~1
+    CalculateRiskScore:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    baseline_total:
+                        type: string
+                        title: Baseline Total (30d)
+                        default: "100"
+                    bulk_subjects:
+                        type: string
+                        title: Bulk Subjects (100+ recipients, 2h)
+                        default: "5"
+                    delete_rules:
+                        type: string
+                        title: Delete Rules (7d)
+                        default: "0"
+                    distinct_alert_types:
+                        type: string
+                        title: Distinct Alert Types (7d)
+                        default: "1"
+                    distinct_recent_detection_types:
+                        type: string
+                        title: Distinct Recent Detection Types (3d)
+                        default: "1"
+                    external_forward_rules:
+                        type: string
+                        title: External Forwarding Rules (7d)
+                        default: "0"
+                    external_pct:
+                        type: string
+                        title: External Recipient Percent (2h)
+                        default: "75"
+                    failure_count:
+                        type: string
+                        title: Auth Failure Count (7d)
+                        default: "0"
+                    forward_rules:
+                        type: string
+                        title: Forwarding Rules (7d)
+                        default: "0"
+                    low_freq_ips:
+                        type: string
+                        title: Low-Frequency IPs (7d)
+                        default: "0"
+                    mfa_count:
+                        type: string
+                        title: MFA Sign-in Count (7d)
+                        default: "0"
+                    risk_event_count:
+                        type: string
+                        title: Entra ID Risk Event Count (7d)
+                        default: "0"
+                    smtp_auth_count:
+                        type: string
+                        title: Authenticated SMTP Sign-ins (24h)
+                        default: "0"
+                    smtp_pct:
+                        type: string
+                        title: SMTP Auth Percentage (24h)
+                        default: "0"
+                    total_client_events:
+                        type: string
+                        title: Total Client Sign-in Events (24h)
+                        default: "0"
+                    browser_count:
+                        type: string
+                        title: Browser Sign-in Count (24h)
+                        default: "0"
+                    browser_pct:
+                        type: string
+                        title: Browser Sign-in Percentage (24h)
+                        default: "0"
+                    desktop_count:
+                        type: string
+                        title: Desktop/Mobile Sign-in Count (24h)
+                        default: "0"
+                    desktop_pct:
+                        type: string
+                        title: Desktop/Mobile Sign-in Percentage (24h)
+                        default: "0"
+                    other_count:
+                        type: string
+                        title: Other/Unknown Sign-in Count (24h)
+                        default: "0"
+                    browser_app:
+                        type: string
+                        title: Browser App Names
+                        default: "N/A"
+                    desktop_app:
+                        type: string
+                        title: Desktop/Mobile App Names
+                        default: "N/A"
+                    total_alerts:
+                        type: string
+                        title: Other Alerts (7d)
+                        default: "0"
+                    total_recent_detections:
+                        type: string
+                        title: Recent Detections (3d)
+                        default: "0"
+                    total_rule_changes:
+                        type: string
+                        title: Total Rule Changes (7d)
+                        default: "0"
+                    total_signins:
+                        type: string
+                        title: Total Sign-ins (7d)
+                        default: "0"
+                    unique_ips:
+                        type: string
+                        title: Unique IPs (7d)
+                        default: "0"
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                    top_subjects:
+                        type: string
+                        title: Bulk Email Subjects (100+ recipients, 2h)
+                        default: "RE: Q1 Sales Forecast (12 rcpts) ; FW: Budget Review Meeting (8 rcpts) ; Team Update - Project Alpha (5 rcpts) ; Monthly Report Submission (3 rcpts) ; Urgent: Client Request (2 rcpts)"
+                    top_5_subjects:
+                        type: string
+                        title: Top 5 Subjects by recipient count (2h)
+                        default: "RE: Q1 Sales Forecast (12 rcpts) ; FW: Budget Review Meeting (8 rcpts) ; Team Update - Project Alpha (5 rcpts) ; Monthly Report Submission (3 rcpts) ; Urgent: Client Request (2 rcpts)"
+                    vt_as_owner:
+                        type: string
+                        title: VT ASN Owner
+                        default: "Unavailable"
+                    vt_country:
+                        type: string
+                        title: VT Country Code
+                        default: "N/A"
+                    vt_reputation:
+                        type: string
+                        title: VT Reputation Score
+                        default: "0"
+                    primary_ip:
+                        type: string
+                        title: Primary Sign-in IP (24h)
+                        default: "N/A"
+                    low_freq_ip_list:
+                        type: string
+                        title: Low-Frequency Sign-in IPs (24h)
+                        default: "None"
+                    xdr_recipient_count:
+                        type: string
+                        title: XDR Total Recipients (2h)
+                        default: "0"
+                    bulk_email_count:
+                        type: string
+                        title: Bulk Email Count (2h)
+                        default: "0"
+                    detection_list:
+                        type: string
+                        title: Recent Detection List (3d)
+                        default: "None"
+                required:
+                    - user_email
+                    - baseline_total
+                    - failure_count
+                    - risk_event_count
+                    - total_recent_detections
+                    - distinct_recent_detection_types
+                    - mfa_count
+                    - total_signins
+                    - unique_ips
+                    - low_freq_ips
+                    - total_rule_changes
+                    - forward_rules
+                    - external_forward_rules
+                    - delete_rules
+                    - bulk_subjects
+                    - external_pct
+                    - total_alerts
+                    - distinct_alert_types
+                    - smtp_auth_count
+                    - smtp_pct
+                    - total_client_events
+                    - browser_count
+                    - browser_pct
+                    - desktop_count
+                    - desktop_pct
+                    - other_count
+                    - browser_app
+                    - desktop_app
+                    - top_subjects
+                    - top_5_subjects
+                    - vt_as_owner
+                    - vt_country
+                    - vt_reputation
+                    - primary_ip
+                    - low_freq_ip_list
+                    - xdr_recipient_count
+                    - bulk_email_count
+                    - detection_list
+                type: object
+                description: Count 24h sends and compute combined risk score (email volume 0-40 + email content 0-15 + auth anomaly 0-26 + client agent 0-5 + mailbox rules 0-15 + alerts correlation 0-15 - negative signals 0-6 = 0-116) with VT IP enrichment and XDR recipient count
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    alerts_correlation_score:
+                        type: string
+                        title: Alerts Correlation Score (0-15)
+                    attack_story:
+                        type: string
+                        title: Attack Story (one-line narrative)
+                    auth_risk_score:
+                        type: string
+                        title: Auth Anomaly Risk Score (0-26)
+                    case_description:
+                        type: string
+                        title: Case Description (full narrative)
+                    client_agent_score:
+                        type: string
+                        title: Client Agent Risk Score (0-5)
+                    current_emails:
+                        type: string
+                        title: Current Emails (24h)
+                    daily_avg:
+                        type: string
+                        title: Daily Average
+                    deviation_pct:
+                        type: string
+                        title: Deviation Percent
+                    email_content_score:
+                        type: string
+                        title: Email Content Risk Score (0-15)
+                    email_volume_score:
+                        type: string
+                        title: Email Volume Risk Score (0-40)
+                    hygiene_bonus:
+                        type: string
+                        title: Mitigating Factors (negative signal)
+                    hygiene_label:
+                        type: string
+                        title: Mitigating Factors Label (itemized breakdown)
+                    ip_geo_score:
+                        type: string
+                        title: IP/Geo Risk Score (0-6)
+                    mailbox_rules_score:
+                        type: string
+                        title: Mailbox Rules Risk Score (0-15)
+                    risk_level:
+                        type: string
+                        title: Risk Level
+                    risk_score:
+                        type: string
+                        title: Risk Score (combined)
+                required:
+                    - current_emails
+                    - risk_score
+                    - risk_level
+                type: object
+                description: Current volume and combined risk assessment
+            config:
+                description: Count 24h email sends and compute combined risk score (email volume 0-40 + email content 0-15 + auth anomaly 0-26 + client agent 0-5 + mailbox rules 0-15 + alerts correlation 0-15 - negative signals 0-6 = 0-116)
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Calculate Risk Score v5.5.0
+                search_query: |
+                    #repo = "mimecast"
+                    | #event.dataset = "emailsecurity.journal"
+                    | _user_email := ?user_email | test(lower(_user_email) == lower(Vendor.senderEnvelope))
+                    | count(as=current_emails)
+                    | user_email_display := ?user_email
+                    | top_subjects := ?top_subjects
+                    | top_subjects := replace(field=top_subjects, regex=" ; ", with="\n")
+                    | top_5_subjects := ?top_5_subjects
+                    | top_5_subjects := replace(field=top_5_subjects, regex=" ; ", with="\n")
+                    | baseline_total := ?baseline_total
+                    | daily_avg := baseline_total / 30
+                    | round(daily_avg)
+                    | deviation_pct := if(current_emails == 0, then=0, else=if(daily_avg > 0, then=((current_emails - daily_avg) * 100) / daily_avg, else=999))
+                    | round(deviation_pct)
+                    | email_volume_score := if(deviation_pct >= 1000, then=40, else=if(deviation_pct >= 500, then=35, else=if(deviation_pct >= 300, then=30, else=if(deviation_pct >= 150, then=20, else=if(deviation_pct >= 50, then=10, else=0)))))
+                    | failure_count := ?failure_count
+                    | risk_event_count := ?risk_event_count
+                    | mfa_count := ?mfa_count
+                    | total_signins := ?total_signins
+                    | auth_failure_score := if(failure_count >= 20, then=10, else=if(failure_count >= 10, then=7, else=if(failure_count >= 5, then=4, else=0)))
+                    | auth_risk_flag_score := if(risk_event_count >= 3, then=10, else=if(risk_event_count >= 1, then=5, else=0))
+                    | single_factor_ratio := if(total_signins > 0, then=((total_signins - mfa_count) * 100) / total_signins, else=0)
+                    | round(single_factor_ratio)
+                    | mfa_weakness_score := if(single_factor_ratio >= 90, then=3, else=if(single_factor_ratio >= 70, then=2, else=0))
+                    | unique_ips := ?unique_ips
+                    | low_freq_ips := ?low_freq_ips
+                    | ip_diversity_score := if(unique_ips >= 8, then=2, else=if(unique_ips >= 5, then=1, else=0))
+                    | low_freq_ip_score := if(low_freq_ips >= 3, then=1, else=0)
+                    | ip_geo_score := ip_diversity_score + low_freq_ip_score
+                    | smtp_auth_count := ?smtp_auth_count
+                    | smtp_pct := ?smtp_pct
+                    | total_client_events := ?total_client_events
+                    | browser_count := ?browser_count
+                    | browser_pct := ?browser_pct
+                    | desktop_count := ?desktop_count
+                    | desktop_pct := ?desktop_pct
+                    | other_count := ?other_count
+                    | browser_app := ?browser_app
+                    | desktop_app := ?desktop_app
+                    | vt_as_owner := ?vt_as_owner
+                    | vt_country := ?vt_country
+                    | vt_reputation := ?vt_reputation
+                    | primary_ip := ?primary_ip
+                    | low_freq_ip_list := ?low_freq_ip_list
+                    | xdr_recipient_count := ?xdr_recipient_count
+                    | bulk_email_count := ?bulk_email_count
+                    | detection_list := ?detection_list
+                    | smtp_base_score := if(smtp_auth_count >= 1, then=3, else=0)
+                    | smtp_ratio_score := if(smtp_pct >= 50, then=2, else=0)
+                    | client_agent_score := smtp_base_score + smtp_ratio_score
+                    | bulk_subjects := ?bulk_subjects
+                    | external_pct := ?external_pct
+                    | bulk_pattern_score := if(bulk_subjects >= 2, then=5, else=if(bulk_subjects >= 1, then=3, else=0))
+                    | external_ratio_score := if(external_pct >= 50, then=10, else=if(external_pct >= 25, then=5, else=if(external_pct >= 10, then=2, else=0)))
+                    | email_content_score := bulk_pattern_score + external_ratio_score
+                    | total_rule_changes := ?total_rule_changes
+                    | forward_rules := ?forward_rules
+                    | external_forward_rules := ?external_forward_rules
+                    | delete_rules := ?delete_rules
+                    | forward_score := if(external_forward_rules >= 1, then=10, else=if(forward_rules >= 1, then=3, else=0))
+                    | delete_score := if(delete_rules >= 1, then=5, else=0)
+                    | mailbox_rules_score_raw := forward_score + delete_score
+                    | mailbox_rules_score := if(mailbox_rules_score_raw > 15, then=15, else=mailbox_rules_score_raw)
+                    | mfa_strength_bonus := if(total_signins > 0, then=if(single_factor_ratio == 0, then=-3, else=0), else=0)
+                    | clean_mailbox_bonus := if(total_rule_changes == 0, then=-3, else=0)
+                    | hygiene_bonus := mfa_strength_bonus + clean_mailbox_bonus
+                    | case {
+                        mfa_strength_bonus <= -3 AND clean_mailbox_bonus <= -3 | hygiene_label := "All sign-ins used MFA: -3, No suspicious inbox rules created: -3";
+                        mfa_strength_bonus <= -3 | hygiene_label := "All sign-ins used MFA: -3";
+                        clean_mailbox_bonus <= -3 | hygiene_label := "No suspicious inbox rules created: -3";
+                        * | hygiene_label := "no mitigating factors";
+                      }
+                    | auth_risk_score := auth_failure_score + auth_risk_flag_score + mfa_weakness_score + ip_geo_score
+                    | total_alerts := ?total_alerts
+                    | distinct_alert_types := ?distinct_alert_types
+                    | alert_volume_score := if(total_alerts >= 6, then=8, else=if(total_alerts >= 3, then=5, else=if(total_alerts >= 1, then=2, else=0)))
+                    | alert_diversity_score := if(distinct_alert_types >= 3, then=2, else=0)
+                    | total_recent_detections := ?total_recent_detections
+                    | distinct_recent_detection_types := ?distinct_recent_detection_types
+                    | recent_detections_score := if(total_recent_detections >= 2, then=5, else=if(total_recent_detections >= 1, then=2, else=0))
+                    | alerts_correlation_score_raw := alert_volume_score + alert_diversity_score + recent_detections_score
+                    | alerts_correlation_score := if(alerts_correlation_score_raw > 15, then=15, else=alerts_correlation_score_raw)
+                    | risk_score := email_volume_score + email_content_score + auth_risk_score + client_agent_score + mailbox_rules_score + alerts_correlation_score + hygiene_bonus
+                    | risk_score := if(risk_score < 0, then=0, else=risk_score)
+                    | risk_level := if(risk_score >= 40, then="HIGH", else=if(risk_score >= 20, then="MEDIUM", else="LOW"))
+                    | case {
+                        email_volume_score >= 30 | volume_narrative := format(format="Sent %s emails in 24 hours, %s%% above their normal baseline of %s/day.", field=[current_emails, deviation_pct, daily_avg]);
+                        email_volume_score >= 10 | volume_narrative := format(format="Sent %s emails in 24 hours, %s%% above their normal baseline of %s/day.", field=[current_emails, deviation_pct, daily_avg]);
+                        current_emails > 0       | volume_narrative := format(format="Sent %s emails in 24 hours (baseline: %s/day, %s%% deviation). Within normal range.", field=[current_emails, daily_avg, deviation_pct]);
+                        *                        | volume_narrative := "No email send activity in the last 24 hours.";
+                      }
+                    | case {
+                        email_content_score >= 10 | content_narrative := format(format="%s%% of recipients are external. Bulk defined as 100 or more emails sent in the last 2 hours.", field=[external_pct]);
+                        email_content_score >= 3  | content_narrative := format(format="%s%% of recipients are external. Bulk defined as 100 or more emails sent in the last 2 hours.", field=[external_pct]);
+                        *                         | content_narrative := "No unusual email content patterns.";
+                      }
+                    | case {
+                        auth_risk_score >= 15 | auth_narrative := format(format="Significant auth concerns: %s failures, %s risk-flagged events out of %s total sign-ins, %s unique IPs over 7 days.", field=[failure_count, risk_event_count, total_signins, unique_ips]);
+                        auth_risk_score >= 5  | auth_narrative := format(format="Minor auth signals: %s failures out of %s sign-ins, %s unique IPs over 7 days.", field=[failure_count, total_signins, unique_ips]);
+                        *                     | auth_narrative := format(format="No significant authentication anomalies (%s sign-ins, %s failures over 7 days).", field=[total_signins, failure_count]);
+                      }
+                    | case {
+                        client_agent_score >= 3 | client_agent_narrative := format(format="SMTP authentication detected: %s SMTP sign-ins out of %s total (%s%% SMTP).\nClient breakdown (24h): Browser %s%% (%s, apps: %s) | Desktop/Mobile %s%% (%s, apps: %s) | SMTP %s%% (%s) | Other %s", field=[smtp_auth_count, total_client_events, smtp_pct, browser_pct, browser_count, browser_app, desktop_pct, desktop_count, desktop_app, smtp_pct, smtp_auth_count, other_count]);
+                        *                       | client_agent_narrative := format(format="No programmatic SMTP authentication detected (%s sign-in events in 24h).\nClient breakdown (24h): Browser %s%% (%s, apps: %s) | Desktop/Mobile %s%% (%s, apps: %s) | SMTP 0%% (0) | Other %s", field=[total_client_events, browser_pct, browser_count, browser_app, desktop_pct, desktop_count, desktop_app, other_count]);
+                      }
+                    | case {
+                        mailbox_rules_score >= 10 | mailbox_narrative := format(format="SUSPICIOUS: External email forwarding rules detected (%s forwarding rules, %s external). %s delete rules found.", field=[forward_rules, external_forward_rules, delete_rules]);
+                        mailbox_rules_score >= 3  | mailbox_narrative := format(format="Inbox rule changes detected: %s forwarding rules, %s delete rules in 7 days.", field=[forward_rules, delete_rules]);
+                        *                         | mailbox_narrative := "No inbox rule changes in the last 7 days.";
+                      }
+                    | case {
+                        alerts_correlation_score >= 5 | alerts_narrative := format(format="Other security alerts found: %s alerts across %s distinct types in 7 days. %s other detections across %s types in the last 3 days.", field=[total_alerts, distinct_alert_types, total_recent_detections, distinct_recent_detection_types]);
+                        alerts_correlation_score >= 1 | alerts_narrative := format(format="%s other security alert(s) in the last 7 days. %s other detection(s) in the last 3 days.", field=[total_alerts, total_recent_detections]);
+                        *                             | alerts_narrative := "No other security alerts or detections for this user recently.";
+                      }
+                    | case {
+                        hygiene_bonus <= -6 | hygiene_narrative := format(format="All sign-ins used MFA and no inbox rule changes in 7 days (%s pts offset).", field=[hygiene_bonus]);
+                        hygiene_bonus <= -3 | hygiene_narrative := format(format="Some mitigating factors found (%s pts offset). Checks: MFA on all sign-ins, no inbox rule changes in 7 days.", field=[hygiene_bonus]);
+                        hygiene_bonus < 0   | hygiene_narrative := format(format="Minor mitigating factor (%s pts offset).", field=[hygiene_bonus]);
+                        *                   | hygiene_narrative := "No mitigating factors found.";
+                      }
+                    | case {
+                        email_volume_score >= 30 AND auth_risk_score >= 10 | primary_factors := "anomalous email volume combined with authentication concerns";
+                        email_volume_score >= 30 AND mailbox_rules_score >= 10 | primary_factors := "anomalous email volume combined with suspicious mailbox rules";
+                        email_volume_score >= 30 | primary_factors := "severely anomalous email volume";
+                        email_volume_score >= 10 AND auth_risk_score >= 10 | primary_factors := "elevated email volume combined with authentication concerns";
+                        email_volume_score >= 10 | primary_factors := "elevated email volume above baseline";
+                        auth_risk_score >= 15 | primary_factors := "significant authentication anomalies";
+                        mailbox_rules_score >= 10 | primary_factors := "suspicious mailbox rule configuration";
+                        * | primary_factors := "combined risk signals";
+                      }
+                    | attack_story := format(format="%s was flagged for %s. %s", field=[user_email_display, primary_factors, volume_narrative])
+                    | case_description := format(format="=== SUMMARY ===\n%s\nXDR total recipients (2h): %s\nExceeded 300 per hour email sending limit.\n\nRisk Score: %s / 116 (%s)\n\n=== EMAIL VOLUME (%s/40) ===\n%s\n\n=== EMAIL CONTENT (%s/15) ===\n%s\nBulk-sent messages (2h): %s\n\nBulk Subjects (100+ recipients, 2h):\n%s\n\nTop 5 Subjects (by recipient count, 2h):\n%s\n\n=== AUTHENTICATION (%s/26) ===\n%s\n\n=== CLIENT AGENT (%s/5) ===\n%s\n\n=== IP ENRICHMENT (VirusTotal) ===\nPrimary sign-in IP (24h): %s\nASN Owner: %s\nCountry: %s\nVT Reputation: %s\n\nLow-frequency sign-in IPs (24h, 2 or fewer sign-ins): %s\n\n=== MAILBOX RULES (%s/15) ===\n%s\n\n=== OTHER SECURITY ALERTS & DETECTIONS (%s/15) ===\n%s\n\nRecent Detections (3d):\n%s\n\n=== MITIGATING FACTORS (%s) ===\n%s", field=[attack_story, xdr_recipient_count, risk_score, risk_level, email_volume_score, volume_narrative, email_content_score, content_narrative, bulk_email_count, top_subjects, top_5_subjects, auth_risk_score, auth_narrative, client_agent_score, client_agent_narrative, primary_ip, vt_as_owner, vt_country, vt_reputation, low_freq_ip_list, mailbox_rules_score, mailbox_narrative, alerts_correlation_score, alerts_narrative, detection_list, hygiene_bonus, hygiene_narrative])
+                    | select([baseline_total, current_emails, daily_avg, deviation_pct, email_volume_score, email_content_score, auth_risk_score, client_agent_score, mailbox_rules_score, alerts_correlation_score, hygiene_bonus, hygiene_label, risk_score, risk_level, failure_count, risk_event_count, mfa_count, total_signins, single_factor_ratio, mfa_weakness_score, unique_ips, low_freq_ips, ip_geo_score, smtp_auth_count, smtp_pct, browser_count, browser_pct, desktop_count, desktop_pct, other_count, browser_app, desktop_app, bulk_subjects, external_pct, total_rule_changes, forward_rules, external_forward_rules, delete_rules, total_alerts, distinct_alert_types, total_recent_detections, distinct_recent_detection_types, recent_detections_score, mfa_strength_bonus, clean_mailbox_bonus, top_subjects, top_5_subjects, vt_as_owner, vt_country, vt_reputation, primary_ip, low_freq_ip_list, xdr_recipient_count, bulk_email_count, detection_list, attack_story, case_description])
+                search_query_args:
+                    baseline_total: "0"
+                    bulk_subjects: "0"
+                    delete_rules: "0"
+                    distinct_alert_types: "0"
+                    distinct_recent_detection_types: "0"
+                    external_forward_rules: "0"
+                    external_pct: "0"
+                    failure_count: "0"
+                    forward_rules: "0"
+                    low_freq_ips: "0"
+                    mfa_count: "0"
+                    risk_event_count: "0"
+                    smtp_auth_count: "0"
+                    smtp_pct: "0"
+                    total_client_events: "0"
+                    browser_count: "0"
+                    browser_pct: "0"
+                    desktop_count: "0"
+                    desktop_pct: "0"
+                    other_count: "0"
+                    browser_app: "N/A"
+                    desktop_app: "N/A"
+                    total_alerts: "0"
+                    total_recent_detections: "0"
+                    total_rule_changes: "0"
+                    total_signins: "0"
+                    unique_ips: "0"
+                    user_email: user@example.com
+                    top_subjects: "No subject data available"
+                    top_5_subjects: "No subject data available"
+                    vt_as_owner: "Unavailable"
+                    vt_country: "N/A"
+                    vt_reputation: "0"
+                    primary_ip: "N/A"
+                    low_freq_ip_list: "None"
+                    xdr_recipient_count: "0"
+                    bulk_email_count: "0"
+                    detection_list: "None"
+                start: 24h
+                tags: []
+        class: Inline.QueryEvent
+        name: Calculate Risk Score
+        next:
+            - RegularUserComplete
+        properties:
+            baseline_total: ${data['QueryHistoricalBaseline.results'][0]['total_emails']}
+            bulk_subjects: ${data['QueryEmailContent.results'][0]['bulk_subjects']}
+            delete_rules: ${data['QueryMailboxRules.results'][0]['delete_rules']}
+            distinct_alert_types: ${data['QueryAlertHistory.results'][0]['distinct_alert_types']}
+            distinct_recent_detection_types: "${data['QueryRecentDetections.results'].size() > 0 ? data['QueryRecentDetections.results'][0]['distinct_detection_types'] : '0'}"
+            external_forward_rules: ${data['QueryMailboxRules.results'][0]['external_forward_rules']}
+            external_pct: ${data['QueryEmailContent.results'][0]['external_pct']}
+            failure_count: ${data['QueryConsolidatedAuth.results'][0]['failure_count']}
+            forward_rules: ${data['QueryMailboxRules.results'][0]['forward_rules']}
+            low_freq_ips: ${data['QueryIPGeoSummary.results'][0]['low_freq_ips']}
+            mfa_count: ${data['QueryConsolidatedAuth.results'][0]['mfa_count']}
+            output_files_only: false
+            risk_event_count: ${data['QueryConsolidatedAuth.results'][0]['risk_event_count']}
+            smtp_auth_count: ${data['QueryClientAgents.results'][0]['smtp_auth_count']}
+            smtp_pct: ${data['QueryClientAgents.results'][0]['smtp_pct']}
+            total_client_events: ${data['QueryClientAgents.results'][0]['total_client_events']}
+            browser_count: ${data['QueryClientAgents.results'][0]['browser_count']}
+            browser_pct: ${data['QueryClientAgents.results'][0]['browser_pct']}
+            desktop_count: ${data['QueryClientAgents.results'][0]['desktop_count']}
+            desktop_pct: ${data['QueryClientAgents.results'][0]['desktop_pct']}
+            other_count: ${data['QueryClientAgents.results'][0]['other_count']}
+            browser_app: ${data['QueryClientAgents.results'][0]['browser_app']}
+            desktop_app: ${data['QueryClientAgents.results'][0]['desktop_app']}
+            total_alerts: ${data['QueryAlertHistory.results'][0]['total_alerts']}
+            total_recent_detections: "${data['QueryRecentDetections.results'].size() > 0 ? data['QueryRecentDetections.results'][0]['total_recent_detections'] : '0'}"
+            total_rule_changes: ${data['QueryMailboxRules.results'][0]['total_rule_changes']}
+            total_signins: ${data['QueryConsolidatedAuth.results'][0]['total_signins']}
+            unique_ips: ${data['QueryIPGeoSummary.results'][0]['unique_ips']}
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            top_subjects: "${data['QueryEmailSubjects.results'].size() > 0 ? data['QueryEmailSubjects.results'][0]['top_subjects'] : 'None'}"
+            top_5_subjects: "${data['QueryEmailSubjects.results'].size() > 0 ? data['QueryEmailSubjects.results'][0]['top_5_subjects'] : 'None'}"
+            vt_as_owner: ${data['VirusTotalIPLookup.body']['data']['attributes']['as_owner']}
+            vt_country: ${data['VirusTotalIPLookup.body']['data']['attributes']['country']}
+            vt_reputation: ${data['VirusTotalIPLookup.body']['data']['attributes']['reputation']}
+            primary_ip: ${data['QuerySignInIP.results'][0]['primary_ip']}
+            low_freq_ip_list: ${data['QuerySignInIP.results'][0]['low_freq_ip_list']}
+            xdr_recipient_count: "${data['QueryXDRRecipientCount.results'].size() > 0 ? data['QueryXDRRecipientCount.results'][0]['xdr_recipient_count'] : '0'}"
+            bulk_email_count: "${data['QueryEmailContent.results'].size() > 0 ? data['QueryEmailContent.results'][0]['bulk_email_count'] : '0'}"
+            detection_list: "${data['QueryRecentDetections.results'].size() > 0 ? data['QueryRecentDetections.results'][0]['detection_list'] : 'None'}"
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    CloseCompanionDetection:
+        id: beb56cc40d334583671ca91e6e390056
+        name: Close companion detection
+        continue_on_error: true
+        next:
+            - AddCompanionClosureComment
+        properties:
+            investigatable_id: ${data['QueryCompanionDetection.results'][0]['companion_detection_id']}
+            status: closed
+        version_constraint: ~0
+    CreateANewCase:
+        id: 4918bf9d85ecc06388eca16543bdbbdc
+        name: Create a new Case
+        next:
+            - AddCommentToCase
+        properties:
+            description: ${data['CalculateRiskScore.results'][0]['case_description']}
+            detections:
+                - ${Trigger.Detection.DetectionID}
+            email_addresses:
+                - ${data['WorkflowCustomVariable.UserEmail']}
+            name: TEST - MMB - ${data['WorkflowCustomVariable.UserEmail']} - Mass Mailing Behavior - v5.0.0
+            severity_level: '${data[''CalculateRiskScore.results''][0][''risk_level''] == "HIGH" ? 4 : 3}'
+            status: new
+            tags:
+                - MMB-TEST-v5
+                - "defender-incident-${data['QueryDefenderIncidentID.results'].size() > 0 ? data['QueryDefenderIncidentID.results'][0]['incident_id'] : 'no-incident'}"
+        version_constraint: ~1
+    CreateVariable:
+        id: 702d15788dbbffdf0b68d8e2f3599aa4
+        class: CreateVariable
+        name: Create variable
+        next:
+            - SetInitialEmail
+        properties:
+            variable_schema:
+                properties:
+                    EntitySid:
+                        type: string
+                    UserDisplayName:
+                        type: string
+                    UserEmail:
+                        type: string
+                    UserPrincipalName:
+                        type: string
+                type: object
+        version_constraint: ~1
+    DebugDetectionData:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        class: Print
+        name: Debug Detection Data
+        next:
+            - QueryDetectionDataset
+        properties:
+            custom_json:
+                debug_purpose: See what FetchDetectionData actually outputs
+                full_output: ${data['QueryDetectionData']}
+            text_data: 'DEBUG: FetchDetectionData output logged'
+        version_constraint: ~1
+    EnrichUserContext:
+        id: 6c6eab39063fa3b72d98c82af60deb8a
+        class: UpdateVariable
+        name: Enrich User Context
+        next:
+            - QueryConsolidatedAuth
+            - QueryRecentDetections
+            - QueryHistoricalBaseline
+            - QueryIPGeoSummary
+            - QueryEmailContent
+            - QueryEmailSubjects
+            - QueryMailboxRules
+            - QueryAlertHistory
+            - QueryClientAgents
+            - QueryDefenderEnrichment
+            - QuerySignInIP
+            - QueryXDRRecipientCount
+        properties:
+            WorkflowCustomVariable:
+                EntitySid: ${data['GetUserContext.EntitySid']}
+                UserDisplayName: ${data['WorkflowCustomVariable.UserEmail']}
+                UserPrincipalName: ${data['WorkflowCustomVariable.UserEmail']}
+        version_constraint: ~1
+    ExtractUserEmail:
+        id: 6c6eab39063fa3b72d98c82af60deb8a
+        class: UpdateVariable
+        name: Extract User Email
+        next:
+            - QueryDefenderIncidentID
+        properties:
+            WorkflowCustomVariable:
+                UserEmail: ${data['QueryDetectionData.results'][0]['user.email']}
+        version_constraint: ~1
+    QueryDefenderIncidentID:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    detection_id:
+                        type: string
+                        title: Detection ID
+                        default: ""
+                required:
+                    - detection_id
+                type: object
+                description: Extract Defender incident ID from all dataset types
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    incident_id:
+                        type: string
+                        title: Defender Incident ID (numeric)
+                    dataset:
+                        type: string
+                        title: Event Dataset Type
+                required:
+                    - incident_id
+                    - dataset
+                type: object
+                description: Incident ID and dataset type for routing
+            config:
+                description: Extract Defender incident ID from all three dataset types (incidents, alerts, saas-security)
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Defender Incident ID
+                search_query: |
+                    #repo=xdr_indicatorsrepo
+                    | Ngsiem.alert.id=?detection_id
+                    | case {
+                        #event.dataset="defender.incidents" | incident_id := Vendor.id ;
+                        #event.dataset="defender.alerts" | incident_id := Vendor.incidentId ;
+                        #Vendor="crowdstrike" | incident_id := Vendor.incidentId ;
+                        * | incident_id := "" ;
+                      }
+                    | rename(field=#event.dataset, as=dataset)
+                    | select([incident_id, dataset])
+                    | head(1)
+                search_query_args:
+                    detection_id: ""
+                start: 7d
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Defender Incident ID
+        next:
+            - QueryCasesByIncidentTag
+        properties:
+            detection_id: ${Trigger.Detection.DetectionID}
+            output_files_only: false
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    GetUserContext:
+        id: 19c7e2af0a24f468be7797fe180c8329
+        class: GetUserIdentityContext
+        continue_on_error: true
+        name: Get User Identity Context
+        next:
+            - EnrichUserContext
+        properties:
+            continue_if_entity_not_found: true
+            username: ${data['WorkflowCustomVariable.UserEmail']}
+        version_constraint: ~1
+    NoDetectionData:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        class: Print
+        name: No Detection Data
+        properties:
+            custom_json:
+                detection_id_reference: ${Trigger.Detection.DetectionID}
+                error: Detection query returned no results
+                result: ERROR - NO DETECTION DATA
+                troubleshooting: Verify detection ID is valid and detection exists in the system
+            text_data: 'ERROR: No detection data found - cannot proceed without valid detection'
+        version_constraint: ~1
+    QueryAlertHistory:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                required:
+                    - user_email
+                type: object
+                description: Alert history - other NG-SIEM alerts for this user (7d), excluding MMB trigger
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    distinct_alert_types:
+                        type: string
+                        title: Distinct Alert Types (7d)
+                    high_volume_alert_types:
+                        type: string
+                        title: High-Volume Alert Types (5+ instances, 7d)
+                    total_alerts:
+                        type: string
+                        title: Total Other Alerts (7d)
+                required:
+                    - total_alerts
+                    - distinct_alert_types
+                    - high_volume_alert_types
+                type: object
+                description: Summary of other security alerts for this user (excluding MMB trigger)
+            config:
+                description: Two-stage groupBy for 7d alert history - total alerts, distinct types, high-volume types
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Alert History (7d)
+                search_query: |
+                    #repo = "xdr_indicatorsrepo"
+                    | Ngsiem.alert.id = *
+                    | user.email = ?user_email
+                    | not(threat.indicator.name = "Email sending limit exceeded")
+                    | groupBy([threat.indicator.name, Ngsiem.event.vendor], function=[count(as=alert_count)])
+                    | case { alert_count >= 5 | high_volume_flag := 1 ; * | high_volume_flag := 0 }
+                    | [total_alerts := sum(alert_count), distinct_alert_types := count(), high_volume_alert_types := sum(high_volume_flag)]
+                    | select([total_alerts, distinct_alert_types, high_volume_alert_types])
+                search_query_args:
+                    user_email: user@example.com
+                start: 168h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Alert History (7d)
+        next:
+            - CalculateRiskScore
+        properties:
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryCasesByIncidentTag:
+        id: 42b5eb476d3332ad443831c37eae5954
+        name: Query cases by incident tag
+        next:
+            - case_exists_incident
+        properties:
+            created_timestamp: now-7d
+            name_contains: ${data['WorkflowCustomVariable.UserEmail']}
+            status:
+                - new
+                - in_progress
+            tags:
+                - "defender-incident-${data['QueryDefenderIncidentID.results'].size() > 0 ? data['QueryDefenderIncidentID.results'][0]['incident_id'] : 'no-incident'}"
+        version_constraint: ~1
+    QueryCasesByUser:
+        id: 42b5eb476d3332ad443831c37eae5954
+        name: Query cases by user
+        next:
+            - case_exists_user
+        properties:
+            created_timestamp: now-7d
+            email_addresses:
+                - ${data['WorkflowCustomVariable.UserEmail']}
+            name_contains: Mass Mailing Behavior
+            status:
+                - new
+                - in_progress
+            tags:
+                - MMB-TEST-v5
+        version_constraint: ~1
+    QueryCompanionDetection:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    defender_incident_id:
+                        type: string
+                        title: Defender Incident ID (numeric)
+                        default: ""
+                required:
+                    - defender_incident_id
+                type: object
+                description: Find companion incident-level detection by Defender incident ID
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    companion_detection_id:
+                        type: string
+                        title: Companion NGSIEM Detection ID
+                required:
+                    - companion_detection_id
+                type: object
+                description: Companion detection ID for closing
+            config:
+                description: Find the companion incident-level detection (no user data) by Defender incident ID
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Companion Detection
+                search_query: |
+                    #repo=xdr_indicatorsrepo
+                    #event.dataset=defender.incidents
+                    Vendor.id=?defender_incident_id
+                    | rename(field="Ngsiem.alert.id", as="companion_detection_id")
+                    | select([companion_detection_id])
+                    | head(1)
+                search_query_args:
+                    defender_incident_id: ""
+                start: 7d
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Companion Detection
+        next:
+            - CloseCompanionDetection
+        properties:
+            defender_incident_id: "${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['defender_incident_id'] : ''}"
+            output_files_only: false
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryConsolidatedAuth:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                required:
+                    - user_email
+                type: object
+                description: Consolidated auth summary - sign-ins, failures, risk events, MFA breakdown (7d)
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    failure_count:
+                        type: string
+                        title: Failed Sign-ins (7d)
+                    failure_ratio:
+                        type: string
+                        title: Failure Ratio (%)
+                    mfa_count:
+                        type: string
+                        title: MFA Sign-ins (7d)
+                    risk_event_count:
+                        type: string
+                        title: Risk Event Count (7d)
+                    single_factor_count:
+                        type: string
+                        title: Single-Factor Sign-ins (7d)
+                    total_signins:
+                        type: string
+                        title: Total Sign-ins (7d)
+                required:
+                    - total_signins
+                    - failure_count
+                    - risk_event_count
+                    - mfa_count
+                    - single_factor_count
+                type: object
+                description: Consolidated auth summary with failures, risk events, and MFA breakdown
+            config:
+                description: Single consolidated query for all auth signals - replaces QueryAuthAnomalySummary + QueryAuthRiskSignals
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Consolidated Auth (7d)
+                search_query: |
+                    #repo = "3pi_microsoft_entra_id"
+                    | #event.dataset = "entraid.signin"
+                    | user.name = ?user_email
+                    | rename(field="#event.outcome", as=outcome)
+                    | case { outcome = "failure" | failure_flag := 1 ; * | failure_flag := 0 }
+                    | case { Vendor.properties.riskState != "none" OR Vendor.properties.riskLevelDuringSignIn != "none" | risk_flag := 1 ; * | risk_flag := 0 }
+                    | case { Vendor.properties.authenticationRequirement = "multiFactorAuthentication" | mfa_flag := 1 ; * | mfa_flag := 0 }
+                    | [total_signins := count(), failure_count := sum(failure_flag), risk_event_count := sum(risk_flag), mfa_count := sum(mfa_flag)]
+                    | failure_ratio := if(total_signins > 0, then=(failure_count * 100) / total_signins, else=0)
+                    | round(failure_ratio)
+                    | single_factor_count := total_signins - mfa_count
+                    | select([total_signins, failure_count, failure_ratio, risk_event_count, mfa_count, single_factor_count])
+                search_query_args:
+                    user_email: user@example.com
+                start: 168h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Consolidated Auth (7d)
+        next:
+            - CalculateRiskScore
+        properties:
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryClientAgents:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                required:
+                    - user_email
+                type: object
+                description: Client agent identification - client app breakdown and SMTP auth detection (24h)
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    smtp_auth_count:
+                        type: string
+                        title: Authenticated SMTP Sign-ins (24h)
+                    total_client_events:
+                        type: string
+                        title: Total Sign-in Events (24h)
+                    smtp_pct:
+                        type: string
+                        title: SMTP Auth Percentage (24h)
+                    browser_count:
+                        type: string
+                        title: Browser Sign-in Count (24h)
+                    browser_pct:
+                        type: string
+                        title: Browser Sign-in Percentage (24h)
+                    desktop_count:
+                        type: string
+                        title: Desktop/Mobile Sign-in Count (24h)
+                    desktop_pct:
+                        type: string
+                        title: Desktop/Mobile Sign-in Percentage (24h)
+                    other_count:
+                        type: string
+                        title: Other/Unknown Sign-in Count (24h)
+                    browser_app:
+                        type: string
+                        title: Browser App Names (comma-separated)
+                    desktop_app:
+                        type: string
+                        title: Desktop/Mobile App Names (comma-separated)
+                required:
+                    - smtp_auth_count
+                    - total_client_events
+                    - smtp_pct
+                    - browser_count
+                    - browser_pct
+                    - desktop_count
+                    - desktop_pct
+                    - other_count
+                    - browser_app
+                    - desktop_app
+                type: object
+                description: Client agent breakdown and SMTP authentication usage metrics for BEC detection (24h)
+            config:
+                description: Identify email client applications and programmatic SMTP authentication usage (24h)
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Client Agents (24h)
+                search_query: |
+                    #repo = "3pi_microsoft_entra_id"
+                    | #event.dataset = "entraid.signin"
+                    | user.name = ?user_email
+                    | default(field="Vendor.properties.clientAppUsed", value="Unknown")
+                    | default(field="Vendor.properties.appDisplayName", value="Unknown")
+                    | case { Vendor.properties.clientAppUsed = "Browser" | cat_browser := 1 ; * | cat_browser := 0 }
+                    | case { Vendor.properties.clientAppUsed = "Mobile Apps and Desktop clients" | cat_desktop := 1 ; * | cat_desktop := 0 }
+                    | case { Vendor.properties.clientAppUsed = "Authenticated SMTP" | cat_smtp := 1 ; * | cat_smtp := 0 }
+                    | case { Vendor.properties.clientAppUsed = "Browser" | browser_app := Vendor.properties.appDisplayName ; * | _x := 0 }
+                    | case { Vendor.properties.clientAppUsed = "Mobile Apps and Desktop clients" | desktop_app := Vendor.properties.appDisplayName ; * | _y := 0 }
+                    | [total_client_events := count(), browser_count := sum(cat_browser), desktop_count := sum(cat_desktop), smtp_auth_count := sum(cat_smtp), collect(browser_app, separator=", "), collect(desktop_app, separator=", ")]
+                    | other_count := total_client_events - browser_count - desktop_count - smtp_auth_count
+                    | browser_pct := if(total_client_events > 0, then=(browser_count * 100) / total_client_events, else=0)
+                    | round(browser_pct)
+                    | desktop_pct := if(total_client_events > 0, then=(desktop_count * 100) / total_client_events, else=0)
+                    | round(desktop_pct)
+                    | smtp_pct := if(total_client_events > 0, then=(smtp_auth_count * 100) / total_client_events, else=0)
+                    | round(smtp_pct)
+                    | default(field="browser_app", value="N/A")
+                    | default(field="desktop_app", value="N/A")
+                    | select([total_client_events, browser_count, browser_pct, desktop_count, desktop_pct, smtp_auth_count, smtp_pct, other_count, browser_app, desktop_app])
+                search_query_args:
+                    user_email: user@example.com
+                start: 24h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Client Agents (24h)
+        next:
+            - CalculateRiskScore
+        properties:
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryDefenderEnrichment:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    ngsiem_event_id:
+                        type: string
+                        title: NGSIEM Event ID
+                        default: ""
+                required:
+                    - ngsiem_event_id
+                type: object
+                description: Defender alert-level enrichment - portal URL, activity timestamps, incident ID
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    defender_portal_url:
+                        type: string
+                        title: Defender Incident Portal URL
+                    alert_portal_url:
+                        type: string
+                        title: Defender Alert Portal URL
+                    activity_start:
+                        type: string
+                        title: Activity Start (firstActivityDateTime)
+                    activity_end:
+                        type: string
+                        title: Activity End (lastActivityDateTime)
+                    defender_incident_id:
+                        type: string
+                        title: Defender Incident ID (numeric)
+                required:
+                    - defender_portal_url
+                    - activity_start
+                    - activity_end
+                    - defender_incident_id
+                type: object
+                description: Defender enrichment from alert-level event in xdr_indicatorsrepo
+            config:
+                description: Extract Defender portal URL, activity timestamps, and incident ID from alert-level event
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Defender Enrichment
+                search_query: |
+                    #repo=xdr_indicatorsrepo
+                    #event.dataset=defender.alerts
+                    Ngsiem.event.id=?ngsiem_event_id
+                    | rename(field="Vendor.incidentWebUrl", as="defender_portal_url")
+                    | rename(field="Vendor.alertWebUrl", as="alert_portal_url")
+                    | rename(field="Vendor.firstActivityDateTime", as="activity_start")
+                    | rename(field="Vendor.lastActivityDateTime", as="activity_end")
+                    | rename(field="Vendor.incidentId", as="defender_incident_id")
+                    | select([defender_portal_url, alert_portal_url, activity_start, activity_end, defender_incident_id])
+                    | head(1)
+                search_query_args:
+                    ngsiem_event_id: ""
+                start: 7d
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Defender Enrichment
+        next:
+            - QueryCompanionDetection
+        properties:
+            ngsiem_event_id: ${data['QueryDetectionData.results'][0]['Ngsiem.event.id']}
+            output_files_only: false
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryDetectionData:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    detection_id:
+                        type: string
+                        title: Detection ID
+                        default: ""
+                required:
+                    - detection_id
+                type: object
+                description: Query detection for user data
+            config:
+                description: Extract user data from detection
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Detection Data
+                search_query: |
+                    Ngsiem.alert.id=?detection_id
+                    | formatTime(format="%Y-%m-%dT%H:%M:%S.%LZ", field=@timestamp, as=detection_time)
+                    | select([user.email, Vendor.email, Ngsiem.event.id, detection_time])
+                    | head(1)
+                search_query_args:
+                    detection_id: ""
+                start: 7d
+                tags: []
+        class: Inline.QueryEvent
+        name: Query Detection Data
+        next:
+            - detection_query_returned_results
+        properties:
+            detection_id: ${data['Trigger.Detection.DetectionID']}
+            output_files_only: false
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryDetectionDataset:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    detection_id:
+                        type: string
+                        title: Detection ID
+                        default: ""
+                required:
+                    - detection_id
+                type: object
+                description: Identify detection event type by #event.dataset field
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    dataset:
+                        type: string
+                        title: Event Dataset (defender.alerts, saas-security, defender.incidents)
+                required:
+                    - dataset
+                type: object
+                description: Detection dataset type for routing
+            config:
+                description: Query detection #event.dataset field for routing logic
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Detection Dataset
+                search_query: |
+                    #repo=xdr_indicatorsrepo
+                    | Ngsiem.alert.id=?detection_id
+                    | rename(field=#event.dataset, as=dataset)
+                    | head(1)
+                    | table([dataset])
+                search_query_args:
+                    detection_id: ""
+                start: 7d
+                tags: []
+        class: Inline.QueryEvent
+        name: Query Detection Dataset
+        next:
+            - is_primary_detection
+        properties:
+            detection_id: ${Trigger.Detection.DetectionID}
+            output_files_only: false
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryEmailContent:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                    observed_time:
+                        type: string
+                        title: Detection Observed Time (ISO8601)
+                        default: "2026-01-01T00:00:00Z"
+                required:
+                    - user_email
+                    - observed_time
+                type: object
+                description: Email content analysis - bulk patterns and external recipient ratio (2h window anchored to detection time)
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    bulk_subjects:
+                        type: string
+                        title: Bulk Subjects (100+ recipients, 2h)
+                    bulk_email_count:
+                        type: string
+                        title: Bulk Email Count (100+ recipients, 2h)
+                    external_pct:
+                        type: string
+                        title: External Recipient Percent (24h)
+                    total_external:
+                        type: string
+                        title: External Recipients (24h)
+                    total_internal:
+                        type: string
+                        title: Internal Recipients (24h)
+                    total_recipients:
+                        type: string
+                        title: Total Recipients (24h)
+                    total_subjects:
+                        type: string
+                        title: Distinct Email Subjects (24h)
+                required:
+                    - total_subjects
+                    - bulk_subjects
+                    - total_recipients
+                    - external_pct
+                    - bulk_email_count
+                type: object
+                description: Email content pattern summary - bulk sends and internal/external ratio (2h)
+            config:
+                description: Analyze 2h email content patterns - bulk subjects (100+ recipients), internal vs external recipients
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Email Content (2h)
+                search_query: |
+                    #repo = "mimecast"
+                    | #event.dataset = "emailsecurity.journal"
+                    | _user_email := ?user_email | test(lower(_user_email) == lower(Vendor.senderEnvelope))
+                    | _detection_ts := ?observed_time
+                    | parseTimestamp(field=_detection_ts, as=_obs_epoch)
+                    | test(@timestamp > (_obs_epoch - duration("2h")))
+                    | test(@timestamp <= _obs_epoch)
+                    | email.subject = *
+                    | case { email.to.address[0] = /.*@example\.com$/i | is_internal := 1 ; * | is_internal := 0 }
+                    | groupBy([email.subject], function=[count(as=rcpt_count), sum(is_internal, as=internal_rcpts)])
+                    | bulk_flag := if(rcpt_count >= 100, then=1, else=0)
+                    | bulk_email_flag := if(rcpt_count >= 100, then=rcpt_count, else=0)
+                    | [total_subjects := count(), bulk_subjects := sum(bulk_flag), total_recipients := sum(rcpt_count), total_internal := sum(internal_rcpts), bulk_email_count := sum(bulk_email_flag)]
+                    | total_external := total_recipients - total_internal
+                    | external_pct := if(total_recipients > 0, then=(total_external * 100) / total_recipients, else=0)
+                    | round(external_pct)
+                    | select([total_subjects, bulk_subjects, total_recipients, total_internal, total_external, external_pct, bulk_email_count])
+                search_query_args:
+                    user_email: user@example.com
+                    observed_time: "2026-01-01T00:00:00Z"
+                start: 24h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Email Content (2h)
+        next:
+            - CalculateRiskScore
+        properties:
+            observed_time: ${data['QueryDetectionData.results'][0]['detection_time']}
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryEmailSubjects:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                    observed_time:
+                        type: string
+                        title: Detection Observed Time (ISO8601)
+                        default: "2026-01-01T00:00:00Z"
+                required:
+                    - user_email
+                    - observed_time
+                type: object
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    top_subjects:
+                        type: string
+                        title: Bulk Subjects (100+ recipients, 2h)
+                    top_5_subjects:
+                        type: string
+                        title: Top 5 Subjects by recipient count (2h)
+                required:
+                    - top_subjects
+                    - top_5_subjects
+                type: object
+            config:
+                description: Bulk email subjects (100+ recipients) and top 5 subjects by recipient count in 2h window
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Bulk Subjects (2h)
+                search_query: |
+                    #repo = "mimecast"
+                    | #event.dataset = "emailsecurity.journal"
+                    | _user_email := ?user_email | test(lower(_user_email) == lower(Vendor.senderEnvelope))
+                    | _detection_ts := ?observed_time
+                    | parseTimestamp(field=_detection_ts, as=_obs_epoch)
+                    | test(@timestamp > (_obs_epoch - duration("2h")))
+                    | test(@timestamp <= _obs_epoch)
+                    | email.subject = *
+                    | groupBy([email.subject], function=[count(as=rcpt_count)])
+                    | sort(rcpt_count, order=desc)
+                    | format(format="%s (%s rcpts)", field=[email.subject, rcpt_count], as=subject_line)
+                    | _group := "all"
+                    | groupBy([_group], function=[
+                        {rcpt_count >= 100 | sort(rcpt_count, order=asc, type=number) | collect(subject_line, separator=" ; ")},
+                        {sort(rcpt_count, order=desc, type=number) | head(5) | top_5_subjects := subject_line | collect(top_5_subjects, separator=" ; ")}
+                      ])
+                    | rename(field=subject_line, as=top_subjects)
+                    | case {
+                        top_subjects = * | top_subjects := top_subjects;
+                        * | top_subjects := "None";
+                      }
+                search_query_args:
+                    user_email: user@example.com
+                    observed_time: "2026-01-01T00:00:00Z"
+                start: 24h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Bulk Subjects (2h)
+        next:
+            - CalculateRiskScore
+        properties:
+            observed_time: ${data['QueryDetectionData.results'][0]['detection_time']}
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryHistoricalBaseline:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                required:
+                    - user_email
+                type: object
+                description: 30-day historical email send volume baseline
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    baseline_period:
+                        type: string
+                        title: Baseline Period
+                    daily_avg_emails:
+                        type: string
+                        title: Daily Avg Emails
+                    total_emails:
+                        type: string
+                        title: Total Emails
+                required:
+                    - total_emails
+                    - daily_avg_emails
+                type: object
+                description: Baseline email volume results
+            config:
+                description: Query 30-day email send volume for baseline comparison
+                end: 24h
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Historical Baseline (30d)
+                search_query: |
+                    #repo = "mimecast"
+                    | #event.dataset = "emailsecurity.journal"
+                    | _user_email := ?user_email | test(lower(_user_email) == lower(Vendor.senderEnvelope))
+                    | [count(as=total_emails), min(@timestamp, as=first_send), max(@timestamp, as=last_send)]
+                    | daily_avg_emails := total_emails / 30
+                    | round(daily_avg_emails)
+                    | baseline_period := "30d"
+                search_query_args:
+                    user_email: user@example.com
+                start: 720h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Historical Baseline (30d)
+        next:
+            - CalculateRiskScore
+        properties:
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryIPGeoSummary:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                required:
+                    - user_email
+                type: object
+                description: IP/Geo analysis - unique IPs and low-frequency IP count (7d)
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    low_freq_ips:
+                        type: string
+                        title: Low-Frequency IPs (7d)
+                    unique_ips:
+                        type: string
+                        title: Unique IPs (7d)
+                required:
+                    - unique_ips
+                    - low_freq_ips
+                type: object
+                description: IP diversity and low-frequency IP summary
+            config:
+                description: Two-stage groupBy for unique IP count and low-frequency IP detection (<=2 sign-ins in 7d)
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query IP/Geo Summary (7d)
+                search_query: |
+                    #repo = "3pi_microsoft_entra_id"
+                    | #event.dataset = "entraid.signin"
+                    | user.name = ?user_email
+                    | groupBy([source.ip, source.geo.country_name], function=[count(as=auth_count)])
+                    | case { auth_count <= 2 | low_freq_flag := 1 ; * | low_freq_flag := 0 }
+                    | [unique_ips := count(), low_freq_ips := sum(low_freq_flag)]
+                    | select([unique_ips, low_freq_ips])
+                search_query_args:
+                    user_email: user@example.com
+                start: 168h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query IP/Geo Summary (7d)
+        next:
+            - CalculateRiskScore
+        properties:
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QuerySignInIP:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                required:
+                    - user_email
+                type: object
+                description: Extract primary sign-in IP (most active) and low-frequency IPs from 24h Entra ID sign-ins
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    primary_ip:
+                        type: string
+                        title: Primary Sign-in IP (24h)
+                    low_freq_ip_list:
+                        type: string
+                        title: Low-Frequency Sign-in IPs (24h, <=2 sign-ins)
+                required:
+                    - primary_ip
+                    - low_freq_ip_list
+                type: object
+                description: Primary IP for VT lookup and low-frequency IP list for analyst review
+            config:
+                description: Extract primary (most active) sign-in IP and collect low-frequency IPs from 24h Entra ID sign-ins
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Sign-In IP (24h)
+                search_query: |
+                    #repo = "3pi_microsoft_entra_id"
+                    | #event.dataset = "entraid.signin"
+                    | user.name = ?user_email
+                    | groupBy([source.ip], function=[count(as=signin_count)])
+                    | sort(signin_count, order=desc)
+                    | case { signin_count <= 2 | low_freq_flag := 1 ; * | low_freq_flag := 0 }
+                    | case { low_freq_flag = 1 | low_freq_ip_entry := format(format="%s (%s sign-ins)", field=[source.ip, signin_count]) ; * | low_freq_ip_entry := "" }
+                    | _group := "all"
+                    | groupBy([_group], function=[
+                        {head(1) | collect(source.ip, separator=",")},
+                        {test(low_freq_flag == 1) | collect(low_freq_ip_entry, separator=" ; ")}
+                      ])
+                    | rename(field="source.ip", as="primary_ip")
+                    | rename(field="low_freq_ip_entry", as="low_freq_ip_list")
+                    | default(field="low_freq_ip_list", value="None")
+                    | default(field="primary_ip", value="unknown")
+                    | select([primary_ip, low_freq_ip_list])
+                search_query_args:
+                    user_email: user@example.com
+                start: 24h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Sign-In IP (24h)
+        next:
+            - VirusTotalIPLookup
+        properties:
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    VirusTotalIPLookup:
+        id: 4e173250822e4806b11d8b91fe57b16f~6aa10759bd9ceda7aae35764fb7b304a
+        continue_on_error: true
+        name: VirusTotal - IP Lookup
+        next:
+            - CalculateRiskScore
+        properties:
+            params:
+                path:
+                    ip: "${data['QuerySignInIP.results'].size() > 0 ? data['QuerySignInIP.results'][0]['primary_ip'] : '0.0.0.0'}"
+        version_constraint: ~0
+    QueryMailboxRules:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                required:
+                    - user_email
+                type: object
+                description: Mailbox rules analysis - suspicious inbox rule changes (7d)
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    delete_rules:
+                        type: string
+                        title: Delete Rules (7d)
+                    external_forward_rules:
+                        type: string
+                        title: External Forwarding Rules (7d)
+                    forward_rules:
+                        type: string
+                        title: Forwarding Rules (7d)
+                    total_rule_changes:
+                        type: string
+                        title: Total Rule Changes (7d)
+                required:
+                    - total_rule_changes
+                    - forward_rules
+                    - external_forward_rules
+                    - delete_rules
+                type: object
+                description: Mailbox rule change summary with suspicious pattern flags
+            config:
+                description: Query 7d inbox rule changes, flag forwarding (internal vs external) and delete rules
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Mailbox Rules (7d)
+                search_query: |
+                    #repo = "microsoft_exchange_online"
+                    | #event.dataset = "exchange.ExchangeAdmin"
+                    | user.email = ?user_email
+                    | event.action = "New-InboxRule" OR event.action = "Set-InboxRule"
+                    | case { Vendor.Parameters.ForwardTo = * OR Vendor.Parameters.ForwardAsAttachmentTo = * OR Vendor.Parameters.RedirectTo = * | has_forward := 1 ; * | has_forward := 0 }
+                    | case { Vendor.Parameters.DeleteMessage = "True" OR Vendor.Parameters.MoveToFolder = "Deleted Items" | has_delete := 1 ; * | has_delete := 0 }
+                    | default(field=Vendor.Parameters.ForwardTo, value="")
+                    | default(field=Vendor.Parameters.ForwardAsAttachmentTo, value="")
+                    | default(field=Vendor.Parameters.RedirectTo, value="")
+                    | case {
+                        has_forward = 1 AND Vendor.Parameters.ForwardTo = /.*@example\.com$/i
+                          | has_external_forward := 0 ;
+                        has_forward = 1 AND Vendor.Parameters.ForwardAsAttachmentTo = /.*@example\.com$/i
+                          | has_external_forward := 0 ;
+                        has_forward = 1 AND Vendor.Parameters.RedirectTo = /.*@example\.com$/i
+                          | has_external_forward := 0 ;
+                        has_forward = 1
+                          | has_external_forward := 1 ;
+                        *
+                          | has_external_forward := 0
+                      }
+                    | [total_rule_changes := count(), forward_rules := sum(has_forward), external_forward_rules := sum(has_external_forward), delete_rules := sum(has_delete)]
+                    | select([total_rule_changes, forward_rules, external_forward_rules, delete_rules])
+                search_query_args:
+                    user_email: user@example.com
+                start: 168h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Mailbox Rules (7d)
+        next:
+            - CalculateRiskScore
+        properties:
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryXDRRecipientCount:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                    observed_time:
+                        type: string
+                        title: Detection Observed Time (ISO8601)
+                        default: "2026-01-01T00:00:00Z"
+                required:
+                    - user_email
+                    - observed_time
+                type: object
+                description: XDR total recipient count - DL-expanded outbound email events (2h window anchored to detection time)
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    xdr_recipient_count:
+                        type: string
+                        title: XDR Total Recipients (2h)
+                required:
+                    - xdr_recipient_count
+                type: object
+                description: Total outbound email recipient count from XDR (captures DL-expanded recipients that Mimecast misses)
+            config:
+                description: Count outbound email events from XDR (one row per DL-expanded recipient) for 2h window anchored to detection time
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query XDR Recipient Count (2h)
+                search_query: |
+                    #repo = microsoft_defender_xdr
+                    | #event.dataset = "windows-defender-365.event"
+                    | Vendor.properties.SenderFromAddress = ?user_email
+                    | _detection_ts := ?observed_time
+                    | parseTimestamp(field=_detection_ts, as=_obs_epoch)
+                    | test(@timestamp > (_obs_epoch - duration("2h")))
+                    | test(@timestamp <= _obs_epoch)
+                    | count(as=xdr_recipient_count)
+                search_query_args:
+                    user_email: user@example.com
+                    observed_time: "2026-01-01T00:00:00Z"
+                start: 24h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query XDR Recipient Count (2h)
+        next:
+            - CalculateRiskScore
+        properties:
+            observed_time: ${data['QueryDetectionData.results'][0]['detection_time']}
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    QueryRecentDetections:
+        id: cdf5c3e0d69f156eaaf56c1f5d3f1b66
+        inline_configuration:
+            input_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    current_detection_id:
+                        type: string
+                        title: Current Detection ID
+                        default: ""
+                    user_email:
+                        type: string
+                        title: User Email
+                        default: user@example.com
+                required:
+                    - user_email
+                type: object
+                description: Query other detections for this user in the last 3 days (any type), excluding the current trigger detection
+            output_schema:
+                $schema: https://json-schema.org/draft-07/schema
+                properties:
+                    detection_list:
+                        type: string
+                        title: Detection List (names and counts, 3d)
+                    distinct_detection_types:
+                        type: string
+                        title: Distinct Detection Types (3d)
+                    total_recent_detections:
+                        type: string
+                        title: Total Recent Detections (3d)
+                required:
+                    - total_recent_detections
+                    - distinct_detection_types
+                type: object
+                description: Count of other detections and distinct types for this user in 3 days
+            config:
+                description: Query 3d detections for same user, excluding current trigger, count totals and distinct types
+                end: now
+                last_modified_by: nchurch@crowdstrike.com
+                repo_or_view: search-all
+                search_name: Query Recent Detections (3d)
+                search_query: |
+                    #repo = "xdr_indicatorsrepo"
+                    | Ngsiem.alert.id = *
+                    | user.email = ?user_email
+                    | Ngsiem.alert.id != ?current_detection_id
+                    | groupBy([threat.indicator.name], function=[count(as=det_count)])
+                    | format(format="%s (x%s)", field=[threat.indicator.name, det_count], as=det_line)
+                    | sort(det_count, order=desc)
+                    | head(10)
+                    | _group := "all"
+                    | groupBy([_group], function=[sum(det_count, as=total_recent_detections), count(as=distinct_detection_types), {sort(det_count, order=desc) | collect(det_line)}])
+                    | rename(field=det_line, as=detection_list)
+                    | default(field=detection_list, value="None")
+                    | default(field=total_recent_detections, value="0")
+                    | default(field=distinct_detection_types, value="0")
+                    | select([total_recent_detections, distinct_detection_types, detection_list])
+                search_query_args:
+                    current_detection_id: ""
+                    user_email: user@example.com
+                start: 72h
+                tags: []
+        class: Inline.QueryEvent
+        continue_on_error: true
+        name: Query Recent Detections (3d)
+        next:
+            - CalculateRiskScore
+        properties:
+            current_detection_id: ${Trigger.Detection.DetectionID}
+            output_files_only: false
+            user_email: ${data['WorkflowCustomVariable.UserEmail']}
+            workflow_csv_header_fields: []
+            workflow_export_event_query_results_to_csv: false
+        version_constraint: ~1
+    # RegularUserComplete is an implicit Fusion join point.
+    # It appears in the `next` of CalculateRiskScore and QueryDefenderEnrichment.
+    # Fusion waits for BOTH to complete before executing this action.
+    # Note: QueryEmailSubjects now routes to CalculateRiskScore (v4.4) to provide top_subjects data.
+    RegularUserComplete:
+        id: aadbf530e35fc452a032f5f8acaaac2a
+        class: Print
+        name: Regular User Complete
+        next:
+            - risk_level_is_high_or_medium___proceed_to_case_creation
+        properties:
+            custom_json:
+                alerts_correlation_score: ${data['CalculateRiskScore.results'][0]['alerts_correlation_score']}
+                auth_failure_count: ${data['QueryConsolidatedAuth.results'][0]['failure_count']}
+                auth_risk_events: ${data['QueryConsolidatedAuth.results'][0]['risk_event_count']}
+                auth_risk_score: ${data['CalculateRiskScore.results'][0]['auth_risk_score']}
+                auth_total_signins: ${data['QueryConsolidatedAuth.results'][0]['total_signins']}
+                baseline_30d_daily_avg: ${data['QueryHistoricalBaseline.results'][0]['daily_avg_emails']}
+                baseline_30d_total: ${data['QueryHistoricalBaseline.results'][0]['total_emails']}
+                bulk_subjects: ${data['QueryEmailContent.results'][0]['bulk_subjects']}
+                current_day_volume: ${data['CalculateRiskScore.results'][0]['current_emails']}
+                delete_rules: ${data['QueryMailboxRules.results'][0]['delete_rules']}
+                deviation_percent: ${data['CalculateRiskScore.results'][0]['deviation_pct']}
+                display_name: ${data['WorkflowCustomVariable.UserDisplayName']}
+                distinct_alert_types: ${data['QueryAlertHistory.results'][0]['distinct_alert_types']}
+                detection_list: "${data['QueryRecentDetections.results'].size() > 0 ? data['QueryRecentDetections.results'][0]['detection_list'] : 'None'}"
+                distinct_recent_detection_types: "${data['QueryRecentDetections.results'].size() > 0 ? data['QueryRecentDetections.results'][0]['distinct_detection_types'] : '0'}"
+                email: ${data['WorkflowCustomVariable.UserEmail']}
+                email_content_score: ${data['CalculateRiskScore.results'][0]['email_content_score']}
+                email_volume_score: ${data['CalculateRiskScore.results'][0]['email_volume_score']}
+                entity_sid: ${data['WorkflowCustomVariable.EntitySid']}
+                external_forward_rules: ${data['QueryMailboxRules.results'][0]['external_forward_rules']}
+                external_pct: ${data['QueryEmailContent.results'][0]['external_pct']}
+                forward_rules: ${data['QueryMailboxRules.results'][0]['forward_rules']}
+                high_volume_alert_types: ${data['QueryAlertHistory.results'][0]['high_volume_alert_types']}
+                hygiene_bonus: ${data['CalculateRiskScore.results'][0]['hygiene_bonus']}
+                ip_geo_score: ${data['CalculateRiskScore.results'][0]['ip_geo_score']}
+                low_freq_ips: ${data['QueryIPGeoSummary.results'][0]['low_freq_ips']}
+                mailbox_rules_score: ${data['CalculateRiskScore.results'][0]['mailbox_rules_score']}
+                mfa_count: ${data['QueryConsolidatedAuth.results'][0]['mfa_count']}
+                mfa_weakness_score: ${data['CalculateRiskScore.results'][0]['mfa_weakness_score']}
+                recent_detections_score: ${data['CalculateRiskScore.results'][0]['recent_detections_score']}
+                result: RISK ASSESSMENT COMPLETE
+                risk_level: ${data['CalculateRiskScore.results'][0]['risk_level']}
+                risk_score: ${data['CalculateRiskScore.results'][0]['risk_score']}
+                single_factor_count: ${data['QueryConsolidatedAuth.results'][0]['single_factor_count']}
+                total_alerts: ${data['QueryAlertHistory.results'][0]['total_alerts']}
+                total_recent_detections: "${data['QueryRecentDetections.results'].size() > 0 ? data['QueryRecentDetections.results'][0]['total_recent_detections'] : '0'}"
+                total_recipients: ${data['QueryEmailContent.results'][0]['total_recipients']}
+                total_rule_changes: ${data['QueryMailboxRules.results'][0]['total_rule_changes']}
+                total_subjects: ${data['QueryEmailContent.results'][0]['total_subjects']}
+                unique_ips: ${data['QueryIPGeoSummary.results'][0]['unique_ips']}
+                defender_portal_url: "${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['defender_portal_url'] : ''}"
+                activity_start: "${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['activity_start'] : ''}"
+                activity_end: "${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['activity_end'] : ''}"
+                defender_incident_id: "${data['QueryDefenderEnrichment.results'].size() > 0 ? data['QueryDefenderEnrichment.results'][0]['defender_incident_id'] : ''}"
+                vt_primary_ip: "${data['CalculateRiskScore.results'][0]['primary_ip']}"
+                vt_as_owner: "${data['CalculateRiskScore.results'][0]['vt_as_owner']}"
+                vt_country: "${data['CalculateRiskScore.results'][0]['vt_country']}"
+                vt_reputation: "${data['CalculateRiskScore.results'][0]['vt_reputation']}"
+                vt_low_freq_ips: "${data['CalculateRiskScore.results'][0]['low_freq_ip_list']}"
+            text_data: MMB RISK ASSESSMENT COMPLETE
+        version_constraint: ~1
+    SendEmail:
+        id: 07413ef9ba7c47bf5a242799f59902cc
+        name: Send email - new case
+        properties:
+            msg: |
+                <html>
+                <body style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333;">
+
+                <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                    <h2 style="margin: 0 0 10px 0;">MMB Case Auto-Created</h2>
+                    <p style="margin: 0; font-size: 16px;"><strong>Risk Level:</strong> ${data['CalculateRiskScore.results'][0]['risk_level']} (${data['CalculateRiskScore.results'][0]['risk_score']} pts)</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold; width: 150px;">Case Name:</td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">${CreateANewCase.name}</td>
+                    </tr>
+                    <tr style="background-color: #f8f9fa;">
+                        <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Case ID:</td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">${CreateANewCase.id}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">User:</td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">${data['WorkflowCustomVariable.UserEmail']}</td>
+                    </tr>
+                </table>
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <span style="font-size: 18px; font-weight: bold; color: #333;">CrowdStrike: </span><a href="https://falcon.crowdstrike.com/xdr/cases/${CreateANewCase.id}" style="display: inline-block; background-color: #dc3545; color: #ffffff; text-decoration: none; padding: 14px 32px; font-size: 18px; font-weight: bold; border-radius: 5px;">Open Falcon Case</a>
+                </div>
+
+                ${data['QueryDefenderEnrichment.results'].size() > 0 ? '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;"><tr style="background-color: #f8f9fa;"><td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold; width: 150px;">MS Defender Incident:</td><td style="padding: 12px; border: 1px solid #dee2e6;"><a href="' + data['QueryDefenderEnrichment.results'][0]['defender_portal_url'] + '" style="color: #6c757d;">View in Defender</a> (ID: ' + data['QueryDefenderEnrichment.results'][0]['defender_incident_id'] + ')</td></tr><tr><td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">Activity Window:</td><td style="padding: 12px; border: 1px solid #dee2e6;">' + data['QueryDefenderEnrichment.results'][0]['activity_start'] + ' to ' + data['QueryDefenderEnrichment.results'][0]['activity_end'] + '</td></tr></table>' : ''}
+
+                <h3 style="color: #dc3545; border-bottom: 2px solid #dc3545; padding-bottom: 5px;">Summary</h3>
+                <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #dc3545; margin-bottom: 20px;">
+                    <p><strong>${data['CalculateRiskScore.results'][0]['attack_story']}</strong></p>
+                    <p><strong>Risk Score:</strong> ${data['CalculateRiskScore.results'][0]['risk_score']} / 116 (${data['CalculateRiskScore.results'][0]['risk_level']})</p>
+                    <p>Vol ${data['CalculateRiskScore.results'][0]['email_volume_score']}/40 | Content ${data['CalculateRiskScore.results'][0]['email_content_score']}/15 | Auth ${data['CalculateRiskScore.results'][0]['auth_risk_score']}/26 | Client ${data['CalculateRiskScore.results'][0]['client_agent_score']}/5 | Mailbox ${data['CalculateRiskScore.results'][0]['mailbox_rules_score']}/15 | Alerts ${data['CalculateRiskScore.results'][0]['alerts_correlation_score']}/15 | Mitigating ${data['CalculateRiskScore.results'][0]['hygiene_bonus']} (${data['CalculateRiskScore.results'][0]['hygiene_label']})</p>
+                </div>
+
+                <h3 style="color: #dc3545; border-bottom: 2px solid #dc3545; padding-bottom: 5px;">IP Enrichment (VirusTotal)</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #dee2e6; font-weight: bold; width: 180px;">Primary Sign-in IP (24h):</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6;">${data['CalculateRiskScore.results'][0]['primary_ip']}</td>
+                    </tr>
+                    <tr style="background-color: #f8f9fa;">
+                        <td style="padding: 8px; border: 1px solid #dee2e6; font-weight: bold;">ASN Owner:</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6;">${data['CalculateRiskScore.results'][0]['vt_as_owner']}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #dee2e6; font-weight: bold;">Country:</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6;">${data['CalculateRiskScore.results'][0]['vt_country']}</td>
+                    </tr>
+                    <tr style="background-color: #f8f9fa;">
+                        <td style="padding: 8px; border: 1px solid #dee2e6; font-weight: bold;">VT Reputation:</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6;">${data['CalculateRiskScore.results'][0]['vt_reputation']}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #dee2e6; font-weight: bold;">Low-freq IPs (24h):</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6;">${data['CalculateRiskScore.results'][0]['low_freq_ip_list']}</td>
+                    </tr>
+                </table>
+
+                <h3 style="color: #dc3545; border-bottom: 2px solid #dc3545; padding-bottom: 5px;">Next Steps</h3>
+                <ol style="padding-left: 20px;">
+                    <li><strong>Review Case:</strong> <a href="https://falcon.crowdstrike.com/xdr/cases/${CreateANewCase.id}" style="color: #007bff;">Open in Falcon Console</a></li>
+                    <li><strong>Validate:</strong> Contact user or manager to verify business justification for mass email activity</li>
+                    ${data['QueryDefenderEnrichment.results'].size() > 0 ? '<li><strong>MS Defender Incident:</strong> <a href="' + data['QueryDefenderEnrichment.results'][0]['defender_portal_url'] + '" style="color: #6c757d;">View in Defender Portal</a></li>' : ''}
+                </ol>
+
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #dee2e6;">
+                <p style="font-size: 12px; color: #6c757d;">Generated by MMB v5.3.0 TEST Workflow</p>
+
+                </body>
+                </html>
+            msg_type: html
+            subject: TEST - MMB Case Created - ${data['CalculateRiskScore.results'][0]['risk_level']} - ${data['WorkflowCustomVariable.UserEmail']}
+            to:
+                - nathan.church@crowdstrike.com
+    SetDetectionStatus:
+        id: 7b77cb5d5ff2651cc51c7c4c610d54d1
+        name: TESTING - Would close detection (new case)
+        next:
+            - SendEmail
+        properties:
+            comment: 'TESTING: Would close detection here (new case path). Case created for ${data[''WorkflowCustomVariable.UserEmail'']} with risk level ${data[''CalculateRiskScore.results''][0][''risk_level'']} (score ${data[''CalculateRiskScore.results''][0][''risk_score'']}).'
+            investigatable_id: ${Trigger.Detection.DetectionID}
+        version_constraint: ~0
+    SetDetectionStatus2:
+        id: 7b77cb5d5ff2651cc51c7c4c610d54d1
+        name: TESTING - Would close detection (dedup)
+        next: []
+        properties:
+            comment: 'TESTING: Would close detection here (dedup path). Detection added to existing case for ${data[''WorkflowCustomVariable.UserEmail'']} (lightweight path - risk scoring skipped for efficiency).'
+            investigatable_id: ${Trigger.Detection.DetectionID}
+        version_constraint: ~0
+    SetInitialEmail:
+        id: 51c4db34ab30465f796d7550f3e3e97b
+        class: UpdateVariable
+        name: Set Initial Email from Trigger
+        next:
+            - QueryDetectionData
+        properties:
+            WorkflowCustomVariable:
+                UserEmail: ""
+        version_constraint: ~1
+conditions:
+    detection_name_matches_email_sending_limit:
+        next:
+            - CreateVariable
+        expression: Trigger.Detection.Name:'Email sending limit exceeded'
+        display:
+            - Detection name matches "Email sending limit exceeded"
+    detection_query_returned_results:
+        next:
+            - DebugDetectionData
+        cel_expression: data['QueryDetectionData.results'].size() > 0
+        display:
+            - Detection query returned results
+        else:
+            - NoDetectionData
+    case_exists_incident:
+        next:
+            - AddDetectionsToCase
+        cel_expression: data['QueryCasesByIncidentTag.cases'].size() > 0
+        display:
+            - Incident-tagged case found - use lightweight path
+        else:
+            - QueryCasesByUser
+    case_exists_user:
+        next:
+            - AddDetectionsToCase
+        cel_expression: data['QueryCasesByUser.cases'].size() > 0
+        display:
+            - User-level case found - use lightweight path
+        else:
+            - GetUserContext
+    existing_mmb_case_found_for_this_user:
+        next:
+            - AddDetectionsToCase
+        cel_expression: data['QueryCasesByIncidentTag.cases'].size() > 0 || data['QueryCasesByUser.cases'].size() > 0
+        display:
+            - Existing MMB case found for this user
+        else:
+            - CreateANewCase
+    # v4.3 TEST CONFIGURATION: Always create cases regardless of risk level.
+    # Kept intentionally for ongoing validation of case creation, email, and
+    # companion detection close paths with real (low-risk) data.
+    # Production workflow retains the risk_level != "LOW" gate.
+    risk_level_is_high_or_medium___proceed_to_case_creation:
+        next:
+            - existing_mmb_case_found_for_this_user
+        cel_expression: "true"
+        display:
+            - TEST OVERRIDE - always create case (all risk levels)
+        else:
+            - AddCommentToDetection
+    case_exists:
+        next:
+            - AddDetectionsToCase
+        cel_expression: data['QueryCasesByIncidentTag.cases'].size() > 0 || data['QueryCasesByUser.cases'].size() > 0
+        display:
+            - Existing MMB case found - use lightweight path
+        else:
+            - GetUserContext
+    is_primary_detection:
+        next:
+            - ExtractUserEmail
+        cel_expression: data['QueryDetectionDataset.results'].size() > 0 && data['QueryDetectionDataset.results'][0].dataset == "defender.alerts"
+        display:
+            - Primary detection (defender.alerts) - proceed to enrichment
+        else:
+            - CloseSiblingComment
+output_fields:
+    - Trigger.Detection.DetectionID
+    - Trigger.Detection.Name
+    - Trigger.Detection.NGSIEM.UserNames
+    - WorkflowCustomVariable.UserEmail
+    - WorkflowCustomVariable.EntitySid
+    - WorkflowCustomVariable.UserDisplayName
+    - WorkflowCustomVariable.UserPrincipalName

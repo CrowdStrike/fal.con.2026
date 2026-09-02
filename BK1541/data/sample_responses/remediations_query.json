@@ -1,0 +1,22 @@
+{
+ "resources": [
+  {
+   "id": "0657c539d0d2327389db92ca44f73555",
+   "type": "VERSION_BASED",
+   "provider": "Falcon sensor",
+   "reference": "1:2.25.1-1ubuntu3.14",
+   "title": "Update ubuntu git",
+   "action": "Update ubuntu git to version 1:2.25.1-1ubuntu3.14 or newer",
+   "link": "",
+   "vendor_url": "",
+   "recommendation_type": "recommended",
+   "created_timestamp": "2026-07-20T01:55:18Z",
+   "updated_timestamp": "2026-08-20T08:19:45Z"
+  }
+ ],
+ "meta": {
+  "query_time": 0.00020258,
+  "powered_by": "spapi",
+  "trace_id": "7cb58704-75d3-41e5-a117-2f6612599692"
+ }
+}

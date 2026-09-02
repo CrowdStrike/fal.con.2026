@@ -1,0 +1,1162 @@
+{
+ "resources": [
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_e89bb8360d7031f187f423518662f5dd",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2025-38352",
+   "vulnerability_metadata_id": "CS-V25-2538299",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "linux-aws-5.15 5.15.0-1084.91~20.04.1",
+     "product_name_normalized": "linux-aws-5.15",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "6ded14752b5a3021b554e8bb9e70a4bd"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "8b589ed602153d07a847ea9a3f74766b"
+     },
+     "remediation_info": {
+      "recommended_id": "6ded14752b5a3021b554e8bb9e70a4bd",
+      "minimum_id": "2715a688f9a33e2c871574c977728d54"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "remediation": {
+    "entities": [
+     {
+      "id": "6ded14752b5a3021b554e8bb9e70a4bd",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "5.15.0-1112.119~20.04.1",
+      "title": "Update ubuntu linux-aws-5.15",
+      "action": "Update ubuntu linux-aws-5.15 to version 5.15.0-1112.119~20.04.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "recommended",
+      "created_timestamp": "2026-07-20T01:55:07Z",
+      "updated_timestamp": "2026-07-28T13:42:47Z"
+     },
+     {
+      "id": "2715a688f9a33e2c871574c977728d54",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "5.15.0-1092.99~20.04.1",
+      "title": "Update ubuntu linux-aws-5.15",
+      "action": "Update ubuntu linux-aws-5.15 to version 5.15.0-1092.99~20.04.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "minimum",
+      "created_timestamp": "2025-09-26T08:28:10Z",
+      "updated_timestamp": "2025-09-26T08:28:10Z"
+     }
+    ]
+   },
+   "cve": {
+    "id": "CVE-2025-38352",
+    "base_score": 7.8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-09-25T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-07-23T02:15:00Z",
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     "CWE-362"
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-38352 is a race condition vulnerability affecting the Linux kernel\u2019s POSIX CPU timers implementation. The vulnerability impacts the Linux kernel and has been actively exploited in limited, targeted attacks. The race condition occurs between handle_posix_cpu_timers() and posix_cpu_timer_del() when an exiting non-autoreaping task passes exit_notify() and calls handle_posix_cpu_timers() from IRQ, allowing it to be reaped by its parent or debugger right after unlock_task_sighand(). This timing issue prevents posix_cpu_timer_del() from detecting timer->it.cpu.firing != 0 because cpu_timer_task_rcu() and/or lock_task_sighand() will fail. Successful exploitation leads to a use-after-free condition of a struct k_itimer, which can result in privilege escalation to root or SYSTEM level access. The vulnerability affects systems running the Linux kernel, including servers, workstations, and mobile devices such as Android smartphones.\n\n\n\nThreat intelligence\n\n\n\nNo related threat intelligence identified.\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/farazsth98/chronomaly, https://github.com/AnalyticETH/chronomaly-webos, https://github.com/farazsth98/poc-CVE-2025-38352\n\nExploit details: The exploit leverages a race condition in the POSIX CPU timers implementation by creating a scenario where an exiting thread\u2019s CPU timers fire during the exit process. The adversary creates CPU timers that fire while a thread is exiting, racing between handle_posix_cpu_timers() and posix_cpu_timer_del(). The exploit consumes CPU time to trigger timer firing at precise moments, using parameters like CPU_USAGE_THRESHOLD to control when timers fire relative to thread exit. A parent process races to hit a second race window inside send_sigqueue() using PARENT_SETTIME_DELAY_US timing adjustments. The exploit implements cross-cache techniques to reallocate freed struct sigqueue objects as pipe buffer data pages. When successful, this creates a use-after-free condition of a struct k_itimer object, which can be exploited for privilege escalation to root access. The exploit has been demonstrated to work within 100 retries, typically succeeding within 60 attempts on vulnerable systems.\n\n\n\nExploit Requirements\n\n\n\n\n\nLocation: On device. The vulnerability requires local access to the affected system to create and manipulate POSIX CPU timers and thread exit conditions.\n\n\n\n\nPrivileges: Low privileges required. The adversary needs local user access to the system to create threads and CPU timers, but does not require elevated privileges to trigger the vulnerability. Note: The CVSS attribute may be incorrect.\n\n\n\n\nUser interaction: None. The vulnerability does not require any action from users of the affected system. The adversary can trigger the race condition directly through local execution without requiring users to perform any actions.\n\n\n\n\nConditions: The affected system must have CONFIG_POSIX_CPU_TIMERS_TASK_WORK disabled in the kernel configuration. The vulnerability is more reliably exploitable when full preemption (CONFIG_PREEMPT=y) is enabled, which is common in Android kernel configurations.\n\n\n\n\nAffected Products\n\n\n\n\nAndroid: Versions using vulnerable Linux kernel\n\nLinux Kernel: < 5.10.158, 5.15.x < 5.15.199, 6.1.x < 6.1.138, 6.6.x < 6.6.80, 6.12.x < 6.12.34\n\n\n\nMitigations\n\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-07-22T08:15:00Z",
+    "vendor_advisory": [
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-38352"
+    ],
+    "references": [
+     "https://git.kernel.org/stable/c/2c72fe18cc5f9f1750f5bc148cf1c94c29e106ff",
+     "https://git.kernel.org/stable/c/2f3daa04a9328220de46f0d5c919a6c0073a9f0b",
+     "https://git.kernel.org/stable/c/460188bc042a3f40f72d34b9f7fc6ee66b0b757b",
+     "https://git.kernel.org/stable/c/764a7a5dfda23f69919441f2eac2a83e7db6e5bb",
+     "https://git.kernel.org/stable/c/78a4b8e3795b31dae58762bc091bb0f4f74a2200",
+     "https://git.kernel.org/stable/c/c076635b3a42771ace7d276de8dc3bc76ee2ba1b",
+     "https://git.kernel.org/stable/c/c29d5318708e67ac13c1b6fc1007d179fb65b4d7",
+     "https://git.kernel.org/stable/c/f90fff1e152dedf52b932240ebbd670d83330eca",
+     "https://github.com/farazsth98/chronomaly",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00007.html",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00008.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-38352"
+    ],
+    "exploitability_score": 1.8,
+    "impact_score": 5.9,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "original_description": "In the Linux kernel, the following vulnerability has been resolved:\n\nposix-cpu-timers: fix race between handle_posix_cpu_timers() and posix_cpu_timer_del()\n\nIf an exiting non-autoreaping task has already passed exit_notify() and\ncalls handle_posix_cpu_timers() from IRQ, it can be reaped by its parent\nor debugger right after unlock_task_sighand().\n\nIf a concurrent posix_cpu_timer_del() runs at that moment, it won't be\nable to detect timer-&gt;it.cpu.firing != 0: cpu_timer_task_rcu() and/or\nlock_task_sighand() will fail.\n\nAdd the tsk-&gt;exit_state check into run_posix_cpu_timers() to fix this.\n\nThis fix is not needed if CONFIG_POSIX_CPU_TIMERS_TASK_WORK=y, because\nexit_task_work() is called before exit_notify(). But the check still\nmakes sense, task_work_add(&amp;tsk-&gt;posix_cputimers_work.work) will fail\nanyway in this case.\n"
+   }
+  },
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_d0d81edf681f3653b93732040d7c8792",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2025-48384",
+   "vulnerability_metadata_id": "CS-V25-4838399",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "git 1:2.25.1-1ubuntu3.14",
+     "product_name_normalized": "git",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "0657c539d0d2327389db92ca44f73555"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "9d8f9b4e7da238cd9b0aa4af052f3f33"
+     },
+     "remediation_info": {
+      "recommended_id": "0657c539d0d2327389db92ca44f73555",
+      "minimum_id": "bd5a369a54033b7f91c627ace1653b60"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "remediation": {
+    "entities": [
+     {
+      "id": "0657c539d0d2327389db92ca44f73555",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "1:2.25.1-1ubuntu3.14",
+      "title": "Update ubuntu git",
+      "action": "Update ubuntu git to version 1:2.25.1-1ubuntu3.14 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "recommended",
+      "created_timestamp": "2026-07-20T01:55:18Z",
+      "updated_timestamp": "2026-08-20T08:19:45Z"
+     },
+     {
+      "id": "bd5a369a54033b7f91c627ace1653b60",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "1:2.25.1-1ubuntu3.14+esm1",
+      "title": "Update ubuntu git",
+      "action": "Update ubuntu git to version 1:2.25.1-1ubuntu3.14+esm1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "minimum",
+      "created_timestamp": "2025-07-09T13:45:20Z",
+      "updated_timestamp": "2025-07-09T13:45:20Z"
+     }
+    ]
+   },
+   "cve": {
+    "id": "CVE-2025-48384",
+    "base_score": 8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-09-15T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-07-09T02:10:00Z",
+    "actors": [
+     "LABYRINTH CHOLLIMA",
+     "PRESSURE CHOLLIMA"
+    ],
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     ""
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-48384 is a Remote Code Execution vulnerability affecting Git, a distributed revision control system. When reading a config value, Git strips any trailing carriage return and line feed (CRLF), but when writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is actively exploited and affects Git versions v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, and v2.50.0. The vulnerability results in arbitrary code execution on developer workstations and servers when cloning malicious repositories with the --recursive flag.\n\n\n\nThreat intelligence\n\n\n\n\nRelated adversaries\n\n\n\nLABYRINTH CHOLLIMA (North Korea, State-Sponsored)\n\nPRESSURE CHOLLIMA (North Korea, State-Sponsored)\n\n\nRelated reports\n\n\n\nCSA-250952 LABYRINTH CHOLLIMA Likely Exploits Git Vulnerability CVE-2025-48384 to Initiate Infection Chain Targeting North American Software and Cryptocurrency Sectors\n\nCSA-260744 Additional Details of PRESSURE CHOLLIMA Delivering First-Stage Malware via Git Repositories\n\nCSDR-25165 CrowdStrike Daily Report: 27 August 2025\n\nCSIR-25027 Regional Threat Report: August 2025 Targeting Trends\n\nCSIR-25030 Sector Report: Technology Sector 2025 Targeting Trends\n\nCSIR-26011 Sector Report: Technology Sector 2026 Targeting Trends\n\nCSIT-26002 PRESSURE CHOLLIMA Adversary Profile\n\nCSIT-26054 Vulnerability Disclosure and ITW Exploitation from July 2024 to December 2025\n\nCSWR-25032 CrowdStrike Intelligence Weekly Report: Week of 9 August 2025\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/beishanxueyuan/CVE-2025-48384-test, https://github.com/butyraldehyde/CVE-2025-48384-PoC, https://github.com/jacobholtz/CVE-2025-48384-poc, https://github.com/nguyentranbaotran/cve-2025-48384-poc, https://github.com/ppd520/CVE-2025-48384, https://github.com/bummie/CVE-2025-48384, https://github.com/s41r4j/CVE-2025-48384-submodule, https://github.com/jideasn/cve-2025-48384, https://github.com/mukesh-610/cve-2025-48384, https://github.com/rtefx/CVE-2025-48384, https://github.com/testtianmaaaa/CVE-2025-48384, https://github.com/DayDayDayDreaming/backup-exec-cve-48384, https://github.com/IK-20211125/CVE-2025-48384, https://github.com/acheong08/CVE-2025-48384, https://github.com/replicatorbot/CVE-2025-48384-POC, https://github.com/testdjshan/CVE-2025-48384, https://github.com/f1shh/CVE-2025-48384, https://github.com/MarcoTondolo/cve-2025-48384-poc, https://github.com/altm4n/cve-2025-48384, https://github.com/fishyyh/CVE-2025-48384-POC, https://github.com/fluoworite/CVE-2025-48384, https://github.com/liamg/CVE-2025-48384, https://github.com/wzx5002/CVE-2025-48384, https://github.com/greatyy/CVE-2025-48384-p\n\nExploit details: The vulnerability exploits Git\u2019s inconsistent handling of carriage return characters in configuration files. When a submodule path contains a trailing \\r character, Git writes it to .gitmodules with double quotes, preserving the \\r. However, when this value is written to .git/modules/sub/config as the worktree parameter without quotes, Git later strips the trailing \\r when reading it. This causes a mismatch between the intended submodule directory name (e.g., sub\\r) and the actual checkout location (e.g., sub). An adversary can exploit this by creating a symlink named sub that points to .git/modules/sub/hooks, and placing a malicious post-checkout hook script in the submodule repository. When a victim clones the repository with git clone --recursive, the submodule is checked out to the symlink location, placing the adversary\u2019s post-checkout hook in the victim\u2019s .git/modules/sub/hooks/ directory. The hook is then automatically executed during the checkout process, achieving remote code execution. Proof of concept repositories demonstrate this by creating a post-checkout script that creates files (e.g., /tmp/fishsucks or /tmp/CVE-2025-48384), exfiltrates sensitive data like /etc/passwd to remote servers, or establishes reverse shells to adversary-controlled systems.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: Remote. The vulnerability can be exploited remotely by an adversary who can host a malicious Git repository or compromise an existing repository. The victim must clone the malicious repository with the --recursive flag to trigger the vulnerability, without requiring local access to the affected device.\n\nPrivileges: None. The adversary does not need any authentication or prior access to the victim\u2019s system. The vulnerability can be exploited without any credentials or established sessions, making it accessible to completely unauthenticated adversaries who can convince a victim to clone a malicious repository.\n\nUser interaction: Required (clone repository). The victim must execute a git clone --recursive command on the malicious repository to trigger the vulnerability. This requires the user to actively clone the repository with the recursive flag, which automatically initializes and checks out submodules, thereby executing the malicious post-checkout hook.\n\nConditions: The vulnerability requires the victim to use the --recursive flag when cloning the repository (or use git submodule update --init --recursive after cloning). The affected system must be running a vulnerable version of Git on a case-sensitive filesystem (Linux/Unix systems), as Windows filesystems do not allow carriage return characters in filenames.\n\n\n\nAffected Products\n\n\n\n\nGit: v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, v2.50.0\n\n\n\nMitigations\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-07-08T19:15:00Z",
+    "vendor_advisory": [
+     "https://github.com/git/git/security/advisories/GHSA-vwqx-4fm8-6qc9",
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-48384"
+    ],
+    "references": [
+     "http://seclists.org/fulldisclosure/2025/Sep/60",
+     "http://www.openwall.com/lists/oss-security/2025/07/08/4",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00003.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-48384"
+    ],
+    "exploitability_score": 1.3,
+    "impact_score": 6,
+    "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:H/A:H",
+    "original_description": "Git is a fast, scalable, distributed revision control system with an unusually rich command set that provides both high-level operations and full access to internals. When reading a config value, Git strips any trailing carriage return and line feed (CRLF). When writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is fixed in v2.43.7, v2.44.4, v2.45.4, v2.46.4, v2.47.3, v2.48.2, v2.49.1, and v2.50.1.\n"
+   }
+  },
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_8f3d637de59c3313ad42d8af6e6b2920",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2026-31431",
+   "vulnerability_metadata_id": "CS-V26-1341299",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "linux-signed-aws-5.15 5.15.0-1084.91~20.04.1",
+     "product_name_normalized": "linux-signed-aws-5.15",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "77f3087c61223da7baec731d3a25af8e"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "468a03ac39c73bb0bacc9beb6b9baa8d"
+     },
+     "remediation_info": {
+      "recommended_id": "77f3087c61223da7baec731d3a25af8e",
+      "minimum_id": "df52e1df0c0332b7885cefc30f7a1610"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "remediation": {
+    "entities": [
+     {
+      "id": "77f3087c61223da7baec731d3a25af8e",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "5.15.0-1112.119~20.04.1",
+      "title": "Update ubuntu linux-signed-aws-5.15",
+      "action": "Update ubuntu linux-signed-aws-5.15 to version 5.15.0-1112.119~20.04.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "recommended",
+      "created_timestamp": "2026-07-20T01:55:07Z",
+      "updated_timestamp": "2026-07-28T13:42:47Z"
+     },
+     {
+      "id": "df52e1df0c0332b7885cefc30f7a1610",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "5.15.0-1108.115~20.04.1",
+      "title": "Update ubuntu linux-signed-aws-5.15",
+      "action": "Update ubuntu linux-signed-aws-5.15 to version 5.15.0-1108.115~20.04.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "minimum",
+      "created_timestamp": "2026-05-26T16:56:36Z",
+      "updated_timestamp": "2026-05-26T16:56:36Z"
+     }
+    ]
+   },
+   "cve": {
+    "id": "CVE-2026-31431",
+    "base_score": 7.8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2026-05-15T00:00:00Z"
+    },
+    "spotlight_published_date": "2026-04-23T12:59:00Z",
+    "actors": [
+     "UMBRAL BISON"
+    ],
+    "name": "Copy Fail",
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     "CWE-669"
+    ],
+    "description": "Summary\n\n\n\nCVE-2026-31431, known as Copy Fail, is a Local Privilege Escalation vulnerability affecting the Linux kernel. The vulnerability exists in the kernel\u2019s cryptographic subsystem, specifically within the algif_aead interface and the authencesn algorithm implementation. An adversary can exploit this vulnerability to perform a deterministic 4-byte write into the page cache of any readable file on the system, including setuid binaries. This is actively exploited in the wild, with public exploit code readily available. Successful exploitation allows an unprivileged local user to achieve root privileges by corrupting the in-memory representation of setuid binaries such as /usr/bin/su, /usr/bin/sudo, or /usr/bin/passwd. The vulnerability affects Linux servers and workstations running vulnerable kernel versions.\n\n\n\nThreat intelligence\n\n\n\n\nRelated adversaries\n\n\n\nUMBRAL BISON (Belarus, State-Sponsored)\n\n\nRelated reports\n\n\n\nCSA-260622 Recently Disclosed Linux LPE Zero-Day Exploit Allows Unprivileged Local Users to Gain Root Privileges; Exploitation Trivial and Almost Certain\n\nCSA-260618 Hacktivist Group 313 Team Claims Responsibility for DDoS Attacks Targeting Major U.S. and European Entities\n\nCSA-260589 Recently Disclosed Linux LPE Exploit Allows Unprivileged Local Users to Gain Root Privileges; Exploitation Trivial and Almost Certain\n\nCSA-260591 UMBRAL BISON Leverages CVE-2026-31431 to Exploit Ukrainian Government Entity\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/0xShe/CVE-2026-31431, https://github.com/0xac1dc0de/CVE-2026-31431, https://github.com/1amBa7Man/Linux-copy-fail-CVE-2026-31431, https://github.com/1neptune/CopyFail, https://github.com/2H-K/copyfailRecurrence, https://github.com/361way/CVE-2026-31431, https://github.com/3jee/copy-fail-go, https://github.com/4n4s4zi/copyfail-alpine, https://github.com/4xura/CVE-2026-31431-CopyFail, https://github.com/AdityaBhatt3010/CVE-2026-31431, https://github.com/Aurillium/RootRemover, https://github.com/Aurillium/public-passwd, https://github.com/AvPrince26/copy-fail-CVE-2026-31431-Python-Golfing, https://github.com/B1gN0Se/copy-fail-CVE-2026-31431, https://github.com/Boos4721/copyfail-rs, https://github.com/ChernStepanov/CopyFail-for-dummies, https://github.com/Crihexe/copy-fail-tiny-elf-CVE-2026-31431, https://github.com/CybroZeus/Copy-Fail-Exploit-CVE-2026-31431, https://github.com/DENNISDGR/CVE-2026-31431-poc, https://github.com/Emmmmllll/copy-fail-zig, https://github.com/ErdemOzgen/copy-fail-cve-2026-31431, https://github.com/EynaExp/Copy-Fail-CVE-2026-31431-modernized, https://github.com/G01d3nW01f/CVE-2026-31431, https://github.com/GOVIND28/-copy-fail-CVE-2026-31431, https://github.com/Gr-1m/CVE-2026-31431, https://github.com/H1d3r/copy-fail_LPE_Interactive, https://github.com/Huchangzhi/autorootlinux, https://github.com/Iamliuxiaozhen/copy_fail, https://github.com/Industri4l-H3ll-Xpl0it3rs/CVE-2026-31431-Copy-Fail, https://github.com/Isw-9/copy-fail-cve-2026-31431-aarch64, https://github.com/JimmyPughtron/CVE-2026-31431-Copy-Fail\u2014Minified-LPE-PoC, https://github.com/JnamerZ/CopyFail-CVE-2026-31431, https://github.com/John-Popovici/CVE-2026-31431-CopyFail-Linux-PrivEsc, https://github.com/JuanBindez/CVE-2026-31431, https://github.com/Juguitos/copy-fail, https://github.com/K3ysTr0K3R/CVE-2026-31431-EXPLOIT, https://github.com/KanbaraAkihito/CVE-2026-31431-copyfail-rs, https://github.com/KaraZajac/DIRTYFAIL, https://github.com/Karim33z/CVE-2026-31431, https://github.com/KhaosFarbauti/CVE-2026-31431, https://github.com/Koshmare-Blossom/Copyfail-sh, https://github.com/LeonardoNovais7/Copy-Fail-Exploit-CVE-2026-31431, https://github.com/Lutfifakee-Project/CVE-2026-31431, https://github.com/Lyutoon/CopyFail-Experiment, https://github.com/MartinPham/copy-fail-CVE-2026-31431-php, https://github.com/Maxime288/CVE-2026-31431-Copy-Fail-R-pertoire-de-Pr-vention, https://github.com/MetaspIoit/CVE-2026-31431, https://github.com/MohamedKarrab/Copy-Fail-CVE-2026-31431, https://github.com/Mr-bv/Copy-fail-CVE-2026-31431-Exploit-in-C\n\nExploit details: The exploit leverages the Linux kernel\u2019s AF_ALG socket interface combined with the splice() system call to corrupt the page cache of readable files. The vulnerability exists in the crypto_authenc_esn_decrypt() function within the authencesn AEAD algorithm implementation. When processing AEAD decryption operations, the kernel performs an in-place operation that incorrectly writes 4 bytes of adversary-controlled data into the destination scatterlist. By using splice() to transfer page cache pages by reference into an AF_ALG socket\u2019s scatterlist, an adversary can cause these pages to remain chained to the output scatterlist. The authencesn implementation then uses the area past the authentication tag as scratch space for ESN (Extended Sequence Number) rearrangement, writing 4 adversary-controlled bytes without restoring them. The corrupted page is never marked dirty, so the on-disk file remains unchanged, but the in-memory page cache is immediately visible system-wide. Exploits typically target setuid binaries like /usr/bin/su, /usr/bin/sudo, or /usr/bin/passwd, overwriting them with shellcode 4 bytes at a time. The shellcode typically performs setuid(0) followed by execve(\"/bin/sh\") to spawn a root shell. After all iterations complete, executing the modified binary runs the injected payload with root privileges due to the setuid bit. The exploit is deterministic and reliable, requiring no race conditions or kernel-specific offsets.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: On device. The vulnerability can be exploited with local access to the affected device. The adversary must be able to execute code on the target system to interact with the AF_ALG socket interface and perform splice() system calls.\n\nPrivileges: Low privileges required. The adversary needs a local unprivileged user account on the target system. No elevated privileges or authentication credentials are required to trigger the vulnerability. Any local user can exploit this vulnerability to escalate to root privileges.\n\nUser interaction: None. The vulnerability does not require any action from users of the affected system. The adversary can trigger the vulnerability directly through system calls without requiring users to click links, open files, or perform any other actions that would facilitate the attack.\n\nConditions: The affected system must have the AF_ALG socket interface enabled with support for the authencesn(hmac(sha256),cbc(aes)) algorithm. This is the default configuration on virtually all major Linux distributions since 2017. The kernel must have CONFIG_CRYPTO_AUTHENC enabled. The system must have at least one setuid-root binary accessible to the adversary for the privilege escalation to succeed.\n\n\n\nAffected Products\n\n\n\n\nLinux Kernel: 4.14 - 7.0\n\n\n\nMitigations\n\n\n\n\nConsider disabling the AF_ALG socket interface by adding install algif_aead /bin/false to /etc/modprobe.d/disable-algif-aead.conf and removing the algif_aead kernel module\n\nReview any recommended remediations",
+    "published_date": "2026-04-22T09:16:00Z",
+    "vendor_advisory": [
+     "https://lore.kernel.org/linux-cve-announce/2026042214-CVE-2026-31431-3d65@gregkh/",
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2026-31431"
+    ],
+    "references": [
+     "http://www.openwall.com/lists/oss-security/2026/04/29/23",
+     "http://www.openwall.com/lists/oss-security/2026/04/29/25",
+     "http://www.openwall.com/lists/oss-security/2026/04/29/26",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/10",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/11",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/12",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/14",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/15",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/16",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/17",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/18",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/2",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/20",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/5",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/6",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/10",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/12",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/15",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/16",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/17",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/18",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/2",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/22",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/23",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/24",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/3",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/14",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/15",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/16",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/17",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/18",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/19",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/20",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/21",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/23",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/24",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/25",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/4",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/5",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/6",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/7",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/8",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/10",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/12",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/13",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/3",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/4",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/5",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/6",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/1",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/10",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/11",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/12",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/13",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/14",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/2",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/24",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/27",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/28",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/29",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/31",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/8",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/9",
+     "http://www.openwall.com/lists/oss-security/2026/05/06/5",
+     "http://www.openwall.com/lists/oss-security/2026/05/07/12",
+     "http://www.openwall.com/lists/oss-security/2026/05/07/2",
+     "http://www.openwall.com/lists/oss-security/2026/05/08/13",
+     "http://www.openwall.com/lists/oss-security/2026/05/18/3",
+     "https://access.redhat.com/errata/RHSA-2026:13565",
+     "https://access.redhat.com/errata/RHSA-2026:13566",
+     "https://access.redhat.com/errata/RHSA-2026:13577",
+     "https://access.redhat.com/errata/RHSA-2026:13578",
+     "https://access.redhat.com/errata/RHSA-2026:13681",
+     "https://access.redhat.com/errata/RHSA-2026:13690",
+     "https://access.redhat.com/errata/RHSA-2026:13727",
+     "https://access.redhat.com/errata/RHSA-2026:13729",
+     "https://access.redhat.com/errata/RHSA-2026:13734",
+     "https://access.redhat.com/errata/RHSA-2026:13811",
+     "https://access.redhat.com/errata/RHSA-2026:13862",
+     "https://access.redhat.com/errata/RHSA-2026:13885",
+     "https://access.redhat.com/errata/RHSA-2026:13887",
+     "https://access.redhat.com/errata/RHSA-2026:13932",
+     "https://access.redhat.com/errata/RHSA-2026:13936",
+     "https://access.redhat.com/errata/RHSA-2026:14097",
+     "https://access.redhat.com/errata/RHSA-2026:14112",
+     "https://access.redhat.com/errata/RHSA-2026:14137",
+     "https://access.redhat.com/errata/RHSA-2026:14165",
+     "https://access.redhat.com/errata/RHSA-2026:14230",
+     "https://access.redhat.com/errata/RHSA-2026:14301",
+     "https://access.redhat.com/errata/RHSA-2026:14339",
+     "https://access.redhat.com/errata/RHSA-2026:14773",
+     "https://access.redhat.com/errata/RHSA-2026:14926",
+     "https://access.redhat.com/errata/RHSA-2026:15087",
+     "https://access.redhat.com/errata/RHSA-2026:15976",
+     "https://access.redhat.com/errata/RHSA-2026:15978",
+     "https://access.redhat.com/errata/RHSA-2026:16018",
+     "https://access.redhat.com/errata/RHSA-2026:16063",
+     "https://access.redhat.com/errata/RHSA-2026:16111",
+     "https://access.redhat.com/errata/RHSA-2026:16208",
+     "https://access.redhat.com/errata/RHSA-2026:16209",
+     "https://access.redhat.com/errata/RHSA-2026:16210",
+     "https://access.redhat.com/errata/RHSA-2026:19074",
+     "https://access.redhat.com/errata/RHSA-2026:19225",
+     "https://access.redhat.com/errata/RHSA-2026:33486",
+     "https://access.redhat.com/security/cve/CVE-2026-31431",
+     "https://access.redhat.com/security/cve/cve-2026-31431#cve-details-mitigation",
+     "https://bugzilla.redhat.com/show_bug.cgi?id=2460538",
+     "https://cert-portal.siemens.com/productcert/html/ssa-019113.html",
+     "https://cert-portal.siemens.com/productcert/html/ssa-082556.html",
+     "https://cert-portal.siemens.com/productcert/html/ssa-265688.html",
+     "https://copy.fail",
+     "https://git.kernel.org/stable/c/19d43105a97be0810edbda875f2cd03f30dc130c",
+     "https://git.kernel.org/stable/c/3115af9644c342b356f3f07a4dd1c8905cd9a6fc",
+     "https://git.kernel.org/stable/c/893d22e0135fa394db81df88697fba6032747667",
+     "https://git.kernel.org/stable/c/8b88d99341f139e23bdeb1027a2a3ae10d341d82",
+     "https://git.kernel.org/stable/c/961cfa271a918ad4ae452420e7c303149002875b",
+     "https://git.kernel.org/stable/c/a664bf3d603dc3bdcf9ae47cc21e0daec706d7a5",
+     "https://git.kernel.org/stable/c/ce42ee423e58dffa5ec03524054c9d8bfd4f6237",
+     "https://git.kernel.org/stable/c/fafe0fa2995a0f7073c1c358d7d3145bcc9aedd8",
+     "https://github.com/theori-io/copy-fail-CVE-2026-31431",
+     "https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-31431.json",
+     "https://websec.net/blog/cve-2026-31431-linux-algifaead-page-cache-write-to-root-69f38a4ccddd2db1f520f170",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-31431",
+     "https://www.kb.cert.org/vuls/id/260001",
+     "https://xint.io/blog/copy-fail-linux-distributions#the-fix-6"
+    ],
+    "exploitability_score": 1.8,
+    "impact_score": 5.9,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "original_description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: algif_aead - Revert to operating out-of-place\n\nThis mostly reverts commit 72548b093ee3 except for the copying of\nthe associated data.\n\nThere is no benefit in operating in-place in algif_aead since the\nsource and destination come from different mappings.  Get rid of\nall the complexity added for in-place operation and just copy the\nAD directly.\n"
+   }
+  },
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_74cf922a5ad139b7b2126b22a12c559e",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2021-4034",
+   "vulnerability_metadata_id": "CS-V21-4303999",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "policykit-1 0.105-26ubuntu1",
+     "product_name_normalized": "policykit-1",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "4bc71251fc7c30cca1c75be06dcef04b"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "bd38fd8094b33ba585f6a2e5ed030304"
+     },
+     "remediation_info": {
+      "recommended_id": "4bc71251fc7c30cca1c75be06dcef04b",
+      "minimum_id": "da148961d29f319298bc33c70e19997b"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "remediation": {
+    "entities": [
+     {
+      "id": "4bc71251fc7c30cca1c75be06dcef04b",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "0.105-26ubuntu1.1",
+      "title": "Update ubuntu policykit-1",
+      "action": "Update ubuntu policykit-1 to version 0.105-26ubuntu1.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "recommended",
+      "created_timestamp": "2026-07-20T01:55:31Z",
+      "updated_timestamp": "2026-08-20T08:20:28Z"
+     },
+     {
+      "id": "da148961d29f319298bc33c70e19997b",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "0.105-26ubuntu1.2",
+      "title": "Update ubuntu policykit-1",
+      "action": "Update ubuntu policykit-1 to version 0.105-26ubuntu1.2 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "minimum",
+      "created_timestamp": "2025-03-12T05:17:03Z",
+      "updated_timestamp": "2025-03-12T05:17:03Z"
+     }
+    ]
+   },
+   "cve": {
+    "id": "CVE-2021-4034",
+    "base_score": 7.8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2022-07-18T00:00:00Z"
+    },
+    "spotlight_published_date": "2022-01-28T20:15:00Z",
+    "actors": [
+     "COSMIC WOLF",
+     "GLACIAL PANDA",
+     "LIMINAL PANDA",
+     "PHANTOM PANDA"
+    ],
+    "name": "PwnKit",
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     "(CWE-125|CWE-787)->CWE-20"
+    ],
+    "description": "Summary\n\n\n\nCVE-2021-4034, known as PwnKit, is a Local Privilege Escalation vulnerability affecting polkit\u2019s pkexec, a SUID-root program installed by default on major Linux distributions including Ubuntu, Debian, Fedora, and CentOS. The vulnerability has been present since pkexec\u2019s creation in May 2009 and allows any unprivileged local user to obtain full root privileges. This memory corruption vulnerability is exploitable instantly and reliably in an architecture-independent way, even when the polkit daemon itself is not running. Public exploit code is widely available and the vulnerability is actively exploited. Successful exploitation results in complete system compromise with root-level access on Linux servers and workstations.\n\n\n\nThreat intelligence\n\n\n\n\n\nRelated adversaries\n\n\n\n\nCOSMIC WOLF (Turkey, State-Sponsored)\n\nGLACIAL PANDA (China, State-Sponsored)\n\nLIMINAL PANDA (China, State-Sponsored)\n\nPHANTOM PANDA (China, State-Sponsored)\n\n\n\n\nRelated reports\n\n\n\n\nCSA-241088 Subset of Brazilian Entities at Increased Risk Following Qualitor Zero-Day Vulnerability (CVE-2024-44849) POC Exploit Release\n\nCSA-250073 COSMIC WOLF Employs Advanced IP Scanner and MobaXtermDecryptor to Target Pakistani Telecom Company\n\nCSA-250645 Linux OverlayFS LPE Exploit Observed ITW; Further Exploitation Highly Likely\n\nCSA-251032 Threat Actor Leverages SAP NetWeaver and Linux LPE Vulnerabilities in Widespread Campaign\n\nCSECR-26001 Threats to SAP Environments in 2025\n\nCSECR-26034 Adversary Emulation Campaign: Living-off-the-Land Techniques\n\nCSECR-25127 Threat Actors Targeting Colocated Data Centers, January 2024 to September 2025\n\nCSGT-25Q3 CrowdStrike Intelligence Quarterly Report: Q3 2025\n\nCSID-24024 Elite Intrusion Digest: 7 - 13 June 2024\n\nCSID-24036 Elite Intrusion Digest: 30 August - 5 September 2024\n\nCSIR-24022 LightBasin Operational Profile; Sophisticated Actor Targets Telecommunications, Financial Entities in Intelligence-Collection Operations\n\nCSIR-25014 GLACIAL PANDA Operational Profile: Adversary Employs Living-off-the-Land Techniques Targeting Telecom Entities in Intelligence-Collection Operations\n\nCSIR-26009 Trends in China-Nexus Targeted Intrusion Tradecraft, 2022-2025\n\nCSIT-25193 Common Access-Development TTPs Employed During Intrusions in Linux and Unix-Like Environments\n\nCSIT-25260 T\u00fcrkiye\u2019s Evolving Cyber Capabilities and Regulatory Landscape Signal Cyber Sovereignty, Domestic Surveillance Ambitions\n\nCSIT-26005 China-Nexus Adversaries\u2019 Vulnerability Exploitation in 2025\n\nCSWR-25035 CrowdStrike Intelligence Weekly Report: Week of 30 August 2025\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://gist.github.com/Ayoub-2/9f52583daec92ba2d81b4c4b4cbfe902, https://gist.github.com/SriharshaHack/e16e02b33e7cb4afa49f5f8fcd10f39a, https://github.com/Al1ex/LinuxEelvation, https://github.com/An00bRektn/CVE-2021-4034, https://github.com/FDlucifer/Pwnkit-go, https://github.com/G01d3nW01f/CVE-2021-4034, https://github.com/HrishitJoshi/CVE-2021-4034, https://github.com/ITMarcin2211/Polkit-s-Pkexec-CVE-2021-4034, https://github.com/Joffr3y/Polkit-CVE-2021-4034-HLP, https://github.com/LucasPDiniz/CVE-2021-4034\n\nExploit details: The vulnerability exploits an out-of-bounds write in pkexec\u2019s argument parsing. When pkexec is executed with an empty argument list (argc=0), the program attempts to parse command-line arguments starting at index 1, which causes it to read and write to argv[1] (actually envp[0], the first environment variable). The exploit manipulates the PATH environment variable to point to a malicious directory containing an executable, then forces pkexec to overwrite envp[0] with a path to this executable. This allows re-introduction of the \u201cunsecure\u201d GCONV_PATH environment variable (normally removed by ld.so from SUID programs). The adversary creates a malicious gconv-modules configuration file and shared library in the GCONV_PATH directory. When pkexec calls g_printerr() to print error messages, it invokes iconv_open() which loads the malicious shared library specified in the attacker-controlled configuration file. The malicious library executes with root privileges, calling setuid(0), setgid(0), seteuid(0), and setegid(0) before spawning a root shell via system(\"/bin/sh\"). The exploit is trivially reliable and works across different architectures.\n\n\n\nExploit Requirements\n\n\n\n\n\nLocation: On device. The vulnerability can only be exploited with local access to the affected Linux system. The adversary must be able to execute commands directly on the vulnerable device, either through an existing shell session or other local access method.\n\n\n\n\nPrivileges: None. The adversary does not need any authentication or elevated privileges to exploit this vulnerability. Any unprivileged local user account can successfully exploit pkexec to obtain full root privileges, making this vulnerability accessible to completely unprivileged users on the system.\n\n\n\n\nUser interaction: None. The vulnerability does not require any action from other users of the affected system. The adversary can trigger the vulnerability directly by executing pkexec with specially crafted arguments and environment variables without requiring users to click links, open files, or perform any other actions.\n\n\n\n\nConditions: The vulnerable pkexec binary must be present with SUID-root permissions set (default installation). The system must have gcc compiler available to compile the malicious shared library during exploitation. The /usr/lib/gconv/ directory structure must be accessible for the iconv_open() function to process the malicious gconv-modules configuration file.\n\n\n\n\nAffected Products\n\n\n\n\npolkit pkexec: version 0.105 and earlier (vulnerable since May 2009)\n\n\n\nMitigations\n\n\n\n\nConsider removing the SUID bit from /usr/bin/pkexec by executing chmod 0755 /usr/bin/pkexec as a temporary mitigation until patches can be applied\n\nReview any recommended remediations",
+    "published_date": "2022-01-28T20:15:00Z",
+    "vendor_advisory": [
+     "https://access.redhat.com/security/vulnerabilities/RHSB-2022-001",
+     "https://access.redhat.com/security/vulnerabilities/RHSB-2022-001",
+     "https://bugzilla.redhat.com/show_bug.cgi?id=2025869"
+    ],
+    "references": [
+     "http://packetstormsecurity.com/files/166196/Polkit-pkexec-Local-Privilege-Escalation.html",
+     "http://packetstormsecurity.com/files/166196/Polkit-pkexec-Local-Privilege-Escalation.html",
+     "http://packetstormsecurity.com/files/166200/Polkit-pkexec-Privilege-Escalation.html",
+     "http://packetstormsecurity.com/files/166200/Polkit-pkexec-Privilege-Escalation.html",
+     "https://access.redhat.com/errata/RHSA-2022:0265",
+     "https://access.redhat.com/errata/RHSA-2022:0266",
+     "https://access.redhat.com/errata/RHSA-2022:0267",
+     "https://access.redhat.com/errata/RHSA-2022:0268",
+     "https://access.redhat.com/errata/RHSA-2022:0269",
+     "https://access.redhat.com/errata/RHSA-2022:0270",
+     "https://access.redhat.com/errata/RHSA-2022:0271",
+     "https://access.redhat.com/errata/RHSA-2022:0272",
+     "https://access.redhat.com/errata/RHSA-2022:0273",
+     "https://access.redhat.com/errata/RHSA-2022:0274",
+     "https://access.redhat.com/errata/RHSA-2022:0443",
+     "https://access.redhat.com/errata/RHSA-2022:0540",
+     "https://access.redhat.com/security/cve/CVE-2021-4034",
+     "https://access.redhat.com/security/cve/CVE-2021-4034",
+     "https://bugzilla.redhat.com/show_bug.cgi?id=2025869",
+     "https://bugzilla.redhat.com/show_bug.cgi?id=CVE-2021-4034",
+     "https://cert-portal.siemens.com/productcert/pdf/ssa-330556.pdf",
+     "https://cert-portal.siemens.com/productcert/pdf/ssa-330556.pdf",
+     "https://gitlab.freedesktop.org/polkit/polkit/-/commit/a2bf5c9c83b6ae46cbd5c779d3055bff81ded683",
+     "https://gitlab.freedesktop.org/polkit/polkit/-/commit/a2bf5c9c83b6ae46cbd5c779d3055bff81ded683",
+     "https://security-tracker.debian.org/tracker/CVE-2021-4034",
+     "https://ubuntu.com/security/CVE-2021-4034",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2021-4034",
+     "https://www.oracle.com/security-alerts/cpuapr2022.html",
+     "https://www.oracle.com/security-alerts/cpuapr2022.html",
+     "https://www.qualys.com/2022/01/25/cve-2021-4034/pwnkit.txt",
+     "https://www.qualys.com/2022/01/25/cve-2021-4034/pwnkit.txt",
+     "https://www.secpod.com/blog/local-privilege-escalation-vulnerability-in-major-linux-distributions-cve-2021-4034/",
+     "https://www.secpod.com/blog/local-privilege-escalation-vulnerability-in-major-linux-distributions-cve-2021-4034/",
+     "https://www.starwindsoftware.com/security/sw-20220818-0001/",
+     "https://www.starwindsoftware.com/security/sw-20220818-0001/",
+     "https://www.suse.com/support/kb/doc/?id=000020564",
+     "https://www.suse.com/support/kb/doc/?id=000020564",
+     "https://www.vicarius.io/vsociety/posts/pwnkit-pkexec-lpe-cve-2021-4034"
+    ],
+    "exploitability_score": 1.8,
+    "impact_score": 5.9,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "original_description": "A local privilege escalation vulnerability was found on polkit's pkexec utility. The pkexec application is a setuid tool designed to allow unprivileged users to run commands as privileged users according predefined policies. The current version of pkexec doesn't handle the calling parameters count correctly and ends trying to execute environment variables as commands. An attacker can leverage this by crafting environment variables in such a way it'll induce pkexec to execute arbitrary code. When successfully executed the attack can cause a local privilege escalation given unprivileged users administrative rights on the target machine.\n"
+   }
+  },
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_6c348d63ca6c3ac38e7b75033f1720e1",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2026-31431",
+   "vulnerability_metadata_id": "CS-V26-1341299",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "linux-aws-5.15 5.15.0-1084.91~20.04.1",
+     "product_name_normalized": "linux-aws-5.15",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "6ded14752b5a3021b554e8bb9e70a4bd"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "2e4427b2096b31808fd43797a39f01e6"
+     },
+     "remediation_info": {
+      "recommended_id": "6ded14752b5a3021b554e8bb9e70a4bd",
+      "minimum_id": "5363f465d61333599170d00b05ab1195"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "remediation": {
+    "entities": [
+     {
+      "id": "6ded14752b5a3021b554e8bb9e70a4bd",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "5.15.0-1112.119~20.04.1",
+      "title": "Update ubuntu linux-aws-5.15",
+      "action": "Update ubuntu linux-aws-5.15 to version 5.15.0-1112.119~20.04.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "recommended",
+      "created_timestamp": "2026-07-20T01:55:07Z",
+      "updated_timestamp": "2026-07-28T13:42:47Z"
+     },
+     {
+      "id": "5363f465d61333599170d00b05ab1195",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "5.15.0-1108.115~20.04.1",
+      "title": "Update ubuntu linux-aws-5.15",
+      "action": "Update ubuntu linux-aws-5.15 to version 5.15.0-1108.115~20.04.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "minimum",
+      "created_timestamp": "2026-05-26T16:56:42Z",
+      "updated_timestamp": "2026-05-26T16:56:42Z"
+     }
+    ]
+   },
+   "cve": {
+    "id": "CVE-2026-31431",
+    "base_score": 7.8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2026-05-15T00:00:00Z"
+    },
+    "spotlight_published_date": "2026-04-23T12:59:00Z",
+    "actors": [
+     "UMBRAL BISON"
+    ],
+    "name": "Copy Fail",
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     "CWE-669"
+    ],
+    "description": "Summary\n\n\n\nCVE-2026-31431, known as Copy Fail, is a Local Privilege Escalation vulnerability affecting the Linux kernel. The vulnerability exists in the kernel\u2019s cryptographic subsystem, specifically within the algif_aead interface and the authencesn algorithm implementation. An adversary can exploit this vulnerability to perform a deterministic 4-byte write into the page cache of any readable file on the system, including setuid binaries. This is actively exploited in the wild, with public exploit code readily available. Successful exploitation allows an unprivileged local user to achieve root privileges by corrupting the in-memory representation of setuid binaries such as /usr/bin/su, /usr/bin/sudo, or /usr/bin/passwd. The vulnerability affects Linux servers and workstations running vulnerable kernel versions.\n\n\n\nThreat intelligence\n\n\n\n\nRelated adversaries\n\n\n\nUMBRAL BISON (Belarus, State-Sponsored)\n\n\nRelated reports\n\n\n\nCSA-260622 Recently Disclosed Linux LPE Zero-Day Exploit Allows Unprivileged Local Users to Gain Root Privileges; Exploitation Trivial and Almost Certain\n\nCSA-260618 Hacktivist Group 313 Team Claims Responsibility for DDoS Attacks Targeting Major U.S. and European Entities\n\nCSA-260589 Recently Disclosed Linux LPE Exploit Allows Unprivileged Local Users to Gain Root Privileges; Exploitation Trivial and Almost Certain\n\nCSA-260591 UMBRAL BISON Leverages CVE-2026-31431 to Exploit Ukrainian Government Entity\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/0xShe/CVE-2026-31431, https://github.com/0xac1dc0de/CVE-2026-31431, https://github.com/1amBa7Man/Linux-copy-fail-CVE-2026-31431, https://github.com/1neptune/CopyFail, https://github.com/2H-K/copyfailRecurrence, https://github.com/361way/CVE-2026-31431, https://github.com/3jee/copy-fail-go, https://github.com/4n4s4zi/copyfail-alpine, https://github.com/4xura/CVE-2026-31431-CopyFail, https://github.com/AdityaBhatt3010/CVE-2026-31431, https://github.com/Aurillium/RootRemover, https://github.com/Aurillium/public-passwd, https://github.com/AvPrince26/copy-fail-CVE-2026-31431-Python-Golfing, https://github.com/B1gN0Se/copy-fail-CVE-2026-31431, https://github.com/Boos4721/copyfail-rs, https://github.com/ChernStepanov/CopyFail-for-dummies, https://github.com/Crihexe/copy-fail-tiny-elf-CVE-2026-31431, https://github.com/CybroZeus/Copy-Fail-Exploit-CVE-2026-31431, https://github.com/DENNISDGR/CVE-2026-31431-poc, https://github.com/Emmmmllll/copy-fail-zig, https://github.com/ErdemOzgen/copy-fail-cve-2026-31431, https://github.com/EynaExp/Copy-Fail-CVE-2026-31431-modernized, https://github.com/G01d3nW01f/CVE-2026-31431, https://github.com/GOVIND28/-copy-fail-CVE-2026-31431, https://github.com/Gr-1m/CVE-2026-31431, https://github.com/H1d3r/copy-fail_LPE_Interactive, https://github.com/Huchangzhi/autorootlinux, https://github.com/Iamliuxiaozhen/copy_fail, https://github.com/Industri4l-H3ll-Xpl0it3rs/CVE-2026-31431-Copy-Fail, https://github.com/Isw-9/copy-fail-cve-2026-31431-aarch64, https://github.com/JimmyPughtron/CVE-2026-31431-Copy-Fail\u2014Minified-LPE-PoC, https://github.com/JnamerZ/CopyFail-CVE-2026-31431, https://github.com/John-Popovici/CVE-2026-31431-CopyFail-Linux-PrivEsc, https://github.com/JuanBindez/CVE-2026-31431, https://github.com/Juguitos/copy-fail, https://github.com/K3ysTr0K3R/CVE-2026-31431-EXPLOIT, https://github.com/KanbaraAkihito/CVE-2026-31431-copyfail-rs, https://github.com/KaraZajac/DIRTYFAIL, https://github.com/Karim33z/CVE-2026-31431, https://github.com/KhaosFarbauti/CVE-2026-31431, https://github.com/Koshmare-Blossom/Copyfail-sh, https://github.com/LeonardoNovais7/Copy-Fail-Exploit-CVE-2026-31431, https://github.com/Lutfifakee-Project/CVE-2026-31431, https://github.com/Lyutoon/CopyFail-Experiment, https://github.com/MartinPham/copy-fail-CVE-2026-31431-php, https://github.com/Maxime288/CVE-2026-31431-Copy-Fail-R-pertoire-de-Pr-vention, https://github.com/MetaspIoit/CVE-2026-31431, https://github.com/MohamedKarrab/Copy-Fail-CVE-2026-31431, https://github.com/Mr-bv/Copy-fail-CVE-2026-31431-Exploit-in-C\n\nExploit details: The exploit leverages the Linux kernel\u2019s AF_ALG socket interface combined with the splice() system call to corrupt the page cache of readable files. The vulnerability exists in the crypto_authenc_esn_decrypt() function within the authencesn AEAD algorithm implementation. When processing AEAD decryption operations, the kernel performs an in-place operation that incorrectly writes 4 bytes of adversary-controlled data into the destination scatterlist. By using splice() to transfer page cache pages by reference into an AF_ALG socket\u2019s scatterlist, an adversary can cause these pages to remain chained to the output scatterlist. The authencesn implementation then uses the area past the authentication tag as scratch space for ESN (Extended Sequence Number) rearrangement, writing 4 adversary-controlled bytes without restoring them. The corrupted page is never marked dirty, so the on-disk file remains unchanged, but the in-memory page cache is immediately visible system-wide. Exploits typically target setuid binaries like /usr/bin/su, /usr/bin/sudo, or /usr/bin/passwd, overwriting them with shellcode 4 bytes at a time. The shellcode typically performs setuid(0) followed by execve(\"/bin/sh\") to spawn a root shell. After all iterations complete, executing the modified binary runs the injected payload with root privileges due to the setuid bit. The exploit is deterministic and reliable, requiring no race conditions or kernel-specific offsets.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: On device. The vulnerability can be exploited with local access to the affected device. The adversary must be able to execute code on the target system to interact with the AF_ALG socket interface and perform splice() system calls.\n\nPrivileges: Low privileges required. The adversary needs a local unprivileged user account on the target system. No elevated privileges or authentication credentials are required to trigger the vulnerability. Any local user can exploit this vulnerability to escalate to root privileges.\n\nUser interaction: None. The vulnerability does not require any action from users of the affected system. The adversary can trigger the vulnerability directly through system calls without requiring users to click links, open files, or perform any other actions that would facilitate the attack.\n\nConditions: The affected system must have the AF_ALG socket interface enabled with support for the authencesn(hmac(sha256),cbc(aes)) algorithm. This is the default configuration on virtually all major Linux distributions since 2017. The kernel must have CONFIG_CRYPTO_AUTHENC enabled. The system must have at least one setuid-root binary accessible to the adversary for the privilege escalation to succeed.\n\n\n\nAffected Products\n\n\n\n\nLinux Kernel: 4.14 - 7.0\n\n\n\nMitigations\n\n\n\n\nConsider disabling the AF_ALG socket interface by adding install algif_aead /bin/false to /etc/modprobe.d/disable-algif-aead.conf and removing the algif_aead kernel module\n\nReview any recommended remediations",
+    "published_date": "2026-04-22T09:16:00Z",
+    "vendor_advisory": [
+     "https://lore.kernel.org/linux-cve-announce/2026042214-CVE-2026-31431-3d65@gregkh/",
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2026-31431"
+    ],
+    "references": [
+     "http://www.openwall.com/lists/oss-security/2026/04/29/23",
+     "http://www.openwall.com/lists/oss-security/2026/04/29/25",
+     "http://www.openwall.com/lists/oss-security/2026/04/29/26",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/10",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/11",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/12",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/14",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/15",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/16",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/17",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/18",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/2",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/20",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/5",
+     "http://www.openwall.com/lists/oss-security/2026/04/30/6",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/10",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/12",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/15",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/16",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/17",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/18",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/2",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/22",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/23",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/24",
+     "http://www.openwall.com/lists/oss-security/2026/05/01/3",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/14",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/15",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/16",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/17",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/18",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/19",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/20",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/21",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/23",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/24",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/25",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/4",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/5",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/6",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/7",
+     "http://www.openwall.com/lists/oss-security/2026/05/02/8",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/10",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/12",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/13",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/3",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/4",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/5",
+     "http://www.openwall.com/lists/oss-security/2026/05/03/6",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/1",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/10",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/11",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/12",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/13",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/14",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/2",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/24",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/27",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/28",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/29",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/31",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/8",
+     "http://www.openwall.com/lists/oss-security/2026/05/04/9",
+     "http://www.openwall.com/lists/oss-security/2026/05/06/5",
+     "http://www.openwall.com/lists/oss-security/2026/05/07/12",
+     "http://www.openwall.com/lists/oss-security/2026/05/07/2",
+     "http://www.openwall.com/lists/oss-security/2026/05/08/13",
+     "http://www.openwall.com/lists/oss-security/2026/05/18/3",
+     "https://access.redhat.com/errata/RHSA-2026:13565",
+     "https://access.redhat.com/errata/RHSA-2026:13566",
+     "https://access.redhat.com/errata/RHSA-2026:13577",
+     "https://access.redhat.com/errata/RHSA-2026:13578",
+     "https://access.redhat.com/errata/RHSA-2026:13681",
+     "https://access.redhat.com/errata/RHSA-2026:13690",
+     "https://access.redhat.com/errata/RHSA-2026:13727",
+     "https://access.redhat.com/errata/RHSA-2026:13729",
+     "https://access.redhat.com/errata/RHSA-2026:13734",
+     "https://access.redhat.com/errata/RHSA-2026:13811",
+     "https://access.redhat.com/errata/RHSA-2026:13862",
+     "https://access.redhat.com/errata/RHSA-2026:13885",
+     "https://access.redhat.com/errata/RHSA-2026:13887",
+     "https://access.redhat.com/errata/RHSA-2026:13932",
+     "https://access.redhat.com/errata/RHSA-2026:13936",
+     "https://access.redhat.com/errata/RHSA-2026:14097",
+     "https://access.redhat.com/errata/RHSA-2026:14112",
+     "https://access.redhat.com/errata/RHSA-2026:14137",
+     "https://access.redhat.com/errata/RHSA-2026:14165",
+     "https://access.redhat.com/errata/RHSA-2026:14230",
+     "https://access.redhat.com/errata/RHSA-2026:14301",
+     "https://access.redhat.com/errata/RHSA-2026:14339",
+     "https://access.redhat.com/errata/RHSA-2026:14773",
+     "https://access.redhat.com/errata/RHSA-2026:14926",
+     "https://access.redhat.com/errata/RHSA-2026:15087",
+     "https://access.redhat.com/errata/RHSA-2026:15976",
+     "https://access.redhat.com/errata/RHSA-2026:15978",
+     "https://access.redhat.com/errata/RHSA-2026:16018",
+     "https://access.redhat.com/errata/RHSA-2026:16063",
+     "https://access.redhat.com/errata/RHSA-2026:16111",
+     "https://access.redhat.com/errata/RHSA-2026:16208",
+     "https://access.redhat.com/errata/RHSA-2026:16209",
+     "https://access.redhat.com/errata/RHSA-2026:16210",
+     "https://access.redhat.com/errata/RHSA-2026:19074",
+     "https://access.redhat.com/errata/RHSA-2026:19225",
+     "https://access.redhat.com/errata/RHSA-2026:33486",
+     "https://access.redhat.com/security/cve/CVE-2026-31431",
+     "https://access.redhat.com/security/cve/cve-2026-31431#cve-details-mitigation",
+     "https://bugzilla.redhat.com/show_bug.cgi?id=2460538",
+     "https://cert-portal.siemens.com/productcert/html/ssa-019113.html",
+     "https://cert-portal.siemens.com/productcert/html/ssa-082556.html",
+     "https://cert-portal.siemens.com/productcert/html/ssa-265688.html",
+     "https://copy.fail",
+     "https://git.kernel.org/stable/c/19d43105a97be0810edbda875f2cd03f30dc130c",
+     "https://git.kernel.org/stable/c/3115af9644c342b356f3f07a4dd1c8905cd9a6fc",
+     "https://git.kernel.org/stable/c/893d22e0135fa394db81df88697fba6032747667",
+     "https://git.kernel.org/stable/c/8b88d99341f139e23bdeb1027a2a3ae10d341d82",
+     "https://git.kernel.org/stable/c/961cfa271a918ad4ae452420e7c303149002875b",
+     "https://git.kernel.org/stable/c/a664bf3d603dc3bdcf9ae47cc21e0daec706d7a5",
+     "https://git.kernel.org/stable/c/ce42ee423e58dffa5ec03524054c9d8bfd4f6237",
+     "https://git.kernel.org/stable/c/fafe0fa2995a0f7073c1c358d7d3145bcc9aedd8",
+     "https://github.com/theori-io/copy-fail-CVE-2026-31431",
+     "https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-31431.json",
+     "https://websec.net/blog/cve-2026-31431-linux-algifaead-page-cache-write-to-root-69f38a4ccddd2db1f520f170",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-31431",
+     "https://www.kb.cert.org/vuls/id/260001",
+     "https://xint.io/blog/copy-fail-linux-distributions#the-fix-6"
+    ],
+    "exploitability_score": 1.8,
+    "impact_score": 5.9,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "original_description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: algif_aead - Revert to operating out-of-place\n\nThis mostly reverts commit 72548b093ee3 except for the copying of\nthe associated data.\n\nThere is no benefit in operating in-place in algif_aead since the\nsource and destination come from different mappings.  Get rid of\nall the complexity added for in-place operation and just copy the\nAD directly.\n"
+   }
+  },
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_668a2dbf3a88313195ce900b509bcbe6",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2025-38352",
+   "vulnerability_metadata_id": "CS-V25-2538299",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "linux-signed-aws-5.15 5.15.0-1084.91~20.04.1",
+     "product_name_normalized": "linux-signed-aws-5.15",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "77f3087c61223da7baec731d3a25af8e"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "ed5af85697fc3e35b76ab3df213e3574"
+     },
+     "remediation_info": {
+      "recommended_id": "77f3087c61223da7baec731d3a25af8e",
+      "minimum_id": "1069b641972a39d4b17db7d7702624b2"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "remediation": {
+    "entities": [
+     {
+      "id": "77f3087c61223da7baec731d3a25af8e",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "5.15.0-1112.119~20.04.1",
+      "title": "Update ubuntu linux-signed-aws-5.15",
+      "action": "Update ubuntu linux-signed-aws-5.15 to version 5.15.0-1112.119~20.04.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "recommended",
+      "created_timestamp": "2026-07-20T01:55:07Z",
+      "updated_timestamp": "2026-07-28T13:42:47Z"
+     },
+     {
+      "id": "1069b641972a39d4b17db7d7702624b2",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "5.15.0-1092.99~20.04.1",
+      "title": "Update ubuntu linux-signed-aws-5.15",
+      "action": "Update ubuntu linux-signed-aws-5.15 to version 5.15.0-1092.99~20.04.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "minimum",
+      "created_timestamp": "2025-09-26T08:28:10Z",
+      "updated_timestamp": "2025-09-26T08:28:10Z"
+     }
+    ]
+   },
+   "cve": {
+    "id": "CVE-2025-38352",
+    "base_score": 7.8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-09-25T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-07-23T02:15:00Z",
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     "CWE-362"
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-38352 is a race condition vulnerability affecting the Linux kernel\u2019s POSIX CPU timers implementation. The vulnerability impacts the Linux kernel and has been actively exploited in limited, targeted attacks. The race condition occurs between handle_posix_cpu_timers() and posix_cpu_timer_del() when an exiting non-autoreaping task passes exit_notify() and calls handle_posix_cpu_timers() from IRQ, allowing it to be reaped by its parent or debugger right after unlock_task_sighand(). This timing issue prevents posix_cpu_timer_del() from detecting timer->it.cpu.firing != 0 because cpu_timer_task_rcu() and/or lock_task_sighand() will fail. Successful exploitation leads to a use-after-free condition of a struct k_itimer, which can result in privilege escalation to root or SYSTEM level access. The vulnerability affects systems running the Linux kernel, including servers, workstations, and mobile devices such as Android smartphones.\n\n\n\nThreat intelligence\n\n\n\nNo related threat intelligence identified.\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/farazsth98/chronomaly, https://github.com/AnalyticETH/chronomaly-webos, https://github.com/farazsth98/poc-CVE-2025-38352\n\nExploit details: The exploit leverages a race condition in the POSIX CPU timers implementation by creating a scenario where an exiting thread\u2019s CPU timers fire during the exit process. The adversary creates CPU timers that fire while a thread is exiting, racing between handle_posix_cpu_timers() and posix_cpu_timer_del(). The exploit consumes CPU time to trigger timer firing at precise moments, using parameters like CPU_USAGE_THRESHOLD to control when timers fire relative to thread exit. A parent process races to hit a second race window inside send_sigqueue() using PARENT_SETTIME_DELAY_US timing adjustments. The exploit implements cross-cache techniques to reallocate freed struct sigqueue objects as pipe buffer data pages. When successful, this creates a use-after-free condition of a struct k_itimer object, which can be exploited for privilege escalation to root access. The exploit has been demonstrated to work within 100 retries, typically succeeding within 60 attempts on vulnerable systems.\n\n\n\nExploit Requirements\n\n\n\n\n\nLocation: On device. The vulnerability requires local access to the affected system to create and manipulate POSIX CPU timers and thread exit conditions.\n\n\n\n\nPrivileges: Low privileges required. The adversary needs local user access to the system to create threads and CPU timers, but does not require elevated privileges to trigger the vulnerability. Note: The CVSS attribute may be incorrect.\n\n\n\n\nUser interaction: None. The vulnerability does not require any action from users of the affected system. The adversary can trigger the race condition directly through local execution without requiring users to perform any actions.\n\n\n\n\nConditions: The affected system must have CONFIG_POSIX_CPU_TIMERS_TASK_WORK disabled in the kernel configuration. The vulnerability is more reliably exploitable when full preemption (CONFIG_PREEMPT=y) is enabled, which is common in Android kernel configurations.\n\n\n\n\nAffected Products\n\n\n\n\nAndroid: Versions using vulnerable Linux kernel\n\nLinux Kernel: < 5.10.158, 5.15.x < 5.15.199, 6.1.x < 6.1.138, 6.6.x < 6.6.80, 6.12.x < 6.12.34\n\n\n\nMitigations\n\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-07-22T08:15:00Z",
+    "vendor_advisory": [
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-38352"
+    ],
+    "references": [
+     "https://git.kernel.org/stable/c/2c72fe18cc5f9f1750f5bc148cf1c94c29e106ff",
+     "https://git.kernel.org/stable/c/2f3daa04a9328220de46f0d5c919a6c0073a9f0b",
+     "https://git.kernel.org/stable/c/460188bc042a3f40f72d34b9f7fc6ee66b0b757b",
+     "https://git.kernel.org/stable/c/764a7a5dfda23f69919441f2eac2a83e7db6e5bb",
+     "https://git.kernel.org/stable/c/78a4b8e3795b31dae58762bc091bb0f4f74a2200",
+     "https://git.kernel.org/stable/c/c076635b3a42771ace7d276de8dc3bc76ee2ba1b",
+     "https://git.kernel.org/stable/c/c29d5318708e67ac13c1b6fc1007d179fb65b4d7",
+     "https://git.kernel.org/stable/c/f90fff1e152dedf52b932240ebbd670d83330eca",
+     "https://github.com/farazsth98/chronomaly",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00007.html",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00008.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-38352"
+    ],
+    "exploitability_score": 1.8,
+    "impact_score": 5.9,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "original_description": "In the Linux kernel, the following vulnerability has been resolved:\n\nposix-cpu-timers: fix race between handle_posix_cpu_timers() and posix_cpu_timer_del()\n\nIf an exiting non-autoreaping task has already passed exit_notify() and\ncalls handle_posix_cpu_timers() from IRQ, it can be reaped by its parent\nor debugger right after unlock_task_sighand().\n\nIf a concurrent posix_cpu_timer_del() runs at that moment, it won't be\nable to detect timer-&gt;it.cpu.firing != 0: cpu_timer_task_rcu() and/or\nlock_task_sighand() will fail.\n\nAdd the tsk-&gt;exit_state check into run_posix_cpu_timers() to fix this.\n\nThis fix is not needed if CONFIG_POSIX_CPU_TIMERS_TASK_WORK=y, because\nexit_task_work() is called before exit_notify(). But the check still\nmakes sense, task_work_add(&amp;tsk-&gt;posix_cputimers_work.work) will fail\nanyway in this case.\n"
+   }
+  },
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_332c16dc597838de8a5e1b13ad88e480",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2025-41244",
+   "vulnerability_metadata_id": "CS-V25-4421399",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "open-vm-tools 2:11.3.0-2ubuntu0~ubuntu20.04.8",
+     "product_name_normalized": "open-vm-tools",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "e819c7231a6d338eb8d39e41535f216a"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "d45510bcbd843b51b5ba7e89ae6e1e36"
+     },
+     "remediation_info": {
+      "recommended_id": "e819c7231a6d338eb8d39e41535f216a",
+      "minimum_id": "e354ac67216d3c808717ce4aa3677e30"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "remediation": {
+    "entities": [
+     {
+      "id": "e819c7231a6d338eb8d39e41535f216a",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "2:11.3.0-2ubuntu0~ubuntu20.04.3",
+      "title": "Update ubuntu open-vm-tools",
+      "action": "Update ubuntu open-vm-tools to version 2:11.3.0-2ubuntu0~ubuntu20.04.3 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "recommended",
+      "created_timestamp": "2026-07-20T01:55:43Z",
+      "updated_timestamp": "2026-08-20T08:19:00Z"
+     },
+     {
+      "id": "e354ac67216d3c808717ce4aa3677e30",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "2:11.3.0-2ubuntu0~ubuntu20.04.8+esm1",
+      "title": "Update ubuntu open-vm-tools",
+      "action": "Update ubuntu open-vm-tools to version 2:11.3.0-2ubuntu0~ubuntu20.04.8+esm1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "minimum",
+      "created_timestamp": "2025-10-01T07:53:20Z",
+      "updated_timestamp": "2025-10-01T07:53:20Z"
+     }
+    ]
+   },
+   "cve": {
+    "id": "CVE-2025-41244",
+    "base_score": 7.8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-11-20T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-09-30T02:27:00Z",
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     ""
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-41244 is a local privilege escalation vulnerability affecting VMware Aria Operations and VMware Tools. A malicious local adversary with non-administrative privileges having access to a VM with VMware Tools installed and managed by Aria Operations with SDMP enabled may exploit this vulnerability to escalate privileges to root on the same VM. The vulnerability is actively exploited in the wild and public exploit code is available. This affects server and virtual machine environments where VMware Tools is deployed. Successful exploitation allows an adversary with low-level local access to gain complete administrative control (root privileges) over the affected virtual machine.\n\n\n\nThreat intelligence\n\n\n\n\nRelated reports\n\n\n\nCSDR-25190 CrowdStrike Daily Report: 2 October 2025\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/haspiranti/CVE-2025-41244-PoC\n\nExploit details: The exploit leverages a race condition in the communication between privileged and unprivileged processes. The adversary runs an unprivileged process that opens a Unix domain socket listener (using abstract namespace @cve or @localbus) and waits for connections. When a privileged process connects to exchange stdin, stdout, and stderr streams, the unprivileged process intercepts these streams and executes arbitrary commands with elevated privileges. The exploit code demonstrates creating a listener on 127.0.0.1 to ensure service discovery, then establishing Unix socket connections to relay I/O streams. The adversary can execute a privileged shell (such as /tmp/reverse.sh) through the interconnected streams, effectively gaining root access. The vulnerability requires VMware Tools to be installed and managed by Aria Operations with SDMP (Service Discovery and Monitoring Protocol) enabled.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: On device. The vulnerability can be exploited with local access to the affected virtual machine. The adversary must have the ability to execute code locally on the VM where VMware Tools is installed.\n\nPrivileges: Low-level authentication required. The adversary needs non-administrative local user privileges on the target VM. While authentication is required, the adversary does not need administrative or root privileges to initiate the exploit, making it accessible to any local user with basic access to the system.\n\nUser interaction: None. The vulnerability does not require any action from users of the affected system. The adversary can trigger the vulnerability directly through local process execution without requiring users to click links, open files, or perform any other actions that would facilitate the attack.\n\nConditions: The affected VM must have VMware Tools installed and be managed by VMware Aria Operations with SDMP (Service Discovery and Monitoring Protocol) enabled for the vulnerability to be exploitable.\n\n\n\nAffected Products\n\n\n\n\nVMware Aria Operations: affected versions\n\nVMware Tools: affected versions\n\n\n\nMitigations\n\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-09-29T17:15:00Z",
+    "vendor_advisory": [
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-41244",
+     "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/36149"
+    ],
+    "references": [
+     "http://support.broadcom.com/group/ecx/support-content-view/-/support-content/Security%20Advisories/VMSA-2025-0015--VMware-Aria-Operations-and-VMware-Tools-updates-address-multiple-vulnerabilities--CVE-2025-41244-CVE-2025-41245--CVE-2025-41246-/36149",
+     "http://www.openwall.com/lists/oss-security/2025/09/29/10",
+     "https://blog.nviso.eu/2025/09/29/you-name-it-vmware-elevates-it-cve-2025-41244/",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00000.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-41244"
+    ],
+    "exploitability_score": 1.8,
+    "impact_score": 5.9,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "original_description": "VMware Aria Operations and VMware Tools contain a local privilege escalation vulnerability.\u00a0A malicious local actor with non-administrative privileges having access to a VM with VMware Tools\u00a0installed and managed by Aria Operations with SDMP enabled may exploit this vulnerability to escalate privileges to root on the same VM.\n"
+   }
+  },
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_05ee608b920d3ddeaa4016477b956fe3",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2021-3560",
+   "vulnerability_metadata_id": "CS-V21-0652999",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "policykit-1 0.105-26ubuntu1",
+     "product_name_normalized": "policykit-1",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "4bc71251fc7c30cca1c75be06dcef04b"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "4237ece82bd0360c8d0909036f781eac"
+     },
+     "remediation_info": {
+      "recommended_id": "4bc71251fc7c30cca1c75be06dcef04b",
+      "minimum_id": "4beff6cf56e43b5181b41b0dee6c86c6"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "remediation": {
+    "entities": [
+     {
+      "id": "4bc71251fc7c30cca1c75be06dcef04b",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "0.105-26ubuntu1.1",
+      "title": "Update ubuntu policykit-1",
+      "action": "Update ubuntu policykit-1 to version 0.105-26ubuntu1.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "recommended",
+      "created_timestamp": "2026-07-20T01:55:31Z",
+      "updated_timestamp": "2026-08-20T08:20:28Z"
+     },
+     {
+      "id": "4beff6cf56e43b5181b41b0dee6c86c6",
+      "type": "VERSION_BASED",
+      "provider": "Falcon sensor",
+      "reference": "0.105-26ubuntu1.1",
+      "title": "Update ubuntu policykit-1",
+      "action": "Update ubuntu policykit-1 to version 0.105-26ubuntu1.1 or newer",
+      "link": "",
+      "vendor_url": "",
+      "recommendation_type": "minimum",
+      "created_timestamp": "2025-03-12T05:17:03Z",
+      "updated_timestamp": "2025-03-12T05:17:03Z"
+     }
+    ]
+   },
+   "cve": {
+    "id": "CVE-2021-3560",
+    "base_score": 7.8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2023-06-02T00:00:00Z"
+    },
+    "spotlight_published_date": "2022-02-16T19:15:00Z",
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     "CWE-754"
+    ],
+    "description": "Summary\n\n\n\nCVE-2021-3560 is an authentication bypass vulnerability affecting polkit, a system service used for controlling system-wide privileges on Linux systems. The vulnerability allows an unprivileged local adversary to bypass credential checks for D-Bus requests by exploiting a race condition, elevating their privileges to root. The flaw exists in polkit versions 0.113 through 0.118 (upstream) and Debian/Ubuntu fork versions 0.105-26 through 0.118 when specific settings are enabled. Public exploit code is actively available and the vulnerability has been exploited in the wild. Successful exploitation allows an adversary to create a new administrative user account with sudo privileges, leading to complete system compromise with root access. The vulnerability affects Linux workstations and servers running vulnerable polkit versions.\n\n\n\nThreat intelligence\n\n\n\nNo related threat intelligence available.\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://www.exploit-db.com/exploits/50011, https://github.com/rapid7/metasploit-framework/tree/master/modules/exploits/linux/local/polkit_dbus_auth_bypass.rb, https://github.com/f4T1H21/CVE-2021-3560-Polkit-DBus, https://github.com/oxagast/oxasploits, https://gist.github.com/redhawkeye/c3b289e9d76c438ce20faed38a2a064a, https://github.com/AssassinUKG/Polkit-CVE-2021-3560, https://github.com/Jeanback1/CVE-2021-3560-exploit, https://github.com/WinMin/CVE-2021-3560, https://github.com/innxrmxst/CVE-2021-3560, https://github.com/pashayogi/ROOT-CVE-2021-3560, https://github.com/arcslash/exploit_CVE-2021-3560, https://github.com/m4lk3rnel/CVE-2021-3560, https://github.com/secnigma/CVE-2021-3560-Polkit-Privilege-Esclation, https://github.com/swapravo/polkadots, https://github.com/yutasato88/CVE-2021-3560-PolkitPrivilegeEsclation, https://github.com/LucasPDiniz/CVE-2021-3560, https://github.com/SeimuPVE/CVE-2021-3560_Polkit, https://github.com/UNICORDev/exploit-CVE-2021-3560, https://github.com/aancw/polkit-auto-exploit, https://github.com/curtishoughton/CVE-2021-3560, https://github.com/BizarreLove/CVE-2021-3560, https://github.com/Kyyomaa/CVE-2021-3560-EXPLOIT, https://github.com/MandipJoshi/CVE-2021-3560, https://github.com/hakivvi/CVE-2021-3560, https://github.com/RicterZ/CVE-2021-3560-Authentication-Agent, https://github.com/adakoifman/CVE-2021-3560, https://github.com/0dayNinja/CVE-2021-3560, https://github.com/Antoine-MANTIS/POC-Bash-CVE-2021-3560, https://github.com/Almorabea/Polkit-exploit, https://github.com/TieuLong21Prosper/CVE-2021-3560, https://github.com/asepsaepdin/CVE-2021-3560, https://github.com/n3onhacks/CVE-2021-3560\n\nExploit details: The vulnerability is exploited through a race condition in polkit\u2019s D-Bus authentication mechanism. The adversary sends a D-Bus method call to org.freedesktop.Accounts service to create a privileged user via CreateUser method at /org/freedesktop/Accounts, then immediately terminates the client process after a precisely calculated delay (typically half the round-trip time of the D-Bus request, around 0.003-0.009 seconds). When polkit attempts to retrieve the caller\u2019s UID via GetConnectionUnixUser and PID via GetConnectionUnixProcessID methods, the terminated connection causes these calls to fail. Due to the vulnerability, polkit incorrectly treats the uninitialized UID value (0) as root, bypassing authentication. The adversary then uses the same technique to call SetPassword method on the newly created user object path /org/freedesktop/Accounts/User[UID] to set a password hash. Multiple attempts are typically required due to timing sensitivity. Exploits use commands like dbus-send --system --dest=org.freedesktop.Accounts --type=method_call --print-reply /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:username string:\"username\" int32:1 followed by immediate process termination.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: On device. The vulnerability can be exploited with local access to the affected device. The adversary must have the ability to execute commands and send D-Bus messages to the system bus from a local user account.\n\nPrivileges: None. The adversary does not need any authentication or prior elevated access to the system. The vulnerability can be exploited from an unprivileged local user account without any credentials or established privileged sessions, making it accessible to any local user who can send D-Bus messages.\n\nUser interaction: None. The vulnerability does not require any action from users of the affected system. The adversary can trigger the vulnerability directly through D-Bus communication without requiring users to click links, open files, or perform any other actions that would facilitate the attack.\n\nConditions: The affected system must have accountsservice and gnome-control-center packages installed. The exploit should be executed from a command-line session (SSH or terminal) rather than a graphical login environment, as graphical sessions may cause repeated authentication prompts. The timing-based nature of the exploit means multiple attempts are typically required for successful exploitation.\n\n\n\nAffected Products\n\n\n\n\npolkit: 0.113 - 0.118 (upstream), 0.105-26 - 0.118 (Debian/Ubuntu fork)\n\n\n\nMitigations\n\n\n\nReview any recommended remediations",
+    "published_date": "2021-06-03T06:55:00Z",
+    "vendor_advisory": [
+     "https://bugzilla.redhat.com/show_bug.cgi?id=1961710",
+     "https://bugzilla.redhat.com/show_bug.cgi?id=1961710"
+    ],
+    "references": [
+     "http://packetstormsecurity.com/files/172836/polkit-Authentication-Bypass.html",
+     "http://packetstormsecurity.com/files/172836/polkit-Authentication-Bypass.html",
+     "http://packetstormsecurity.com/files/172846/Facebook-Fizz-Denial-Of-Service.html",
+     "https://access.redhat.com/security/cve/cve-2021-3560",
+     "https://github.blog/2021-06-10-privilege-escalation-polkit-root-on-linux-with-bug/",
+     "https://github.blog/2021-06-10-privilege-escalation-polkit-root-on-linux-with-bug/",
+     "https://github.blog/2021-06-10-privilege-escalation-polkit-root-on-linux-with-bug/",
+     "https://security-tracker.debian.org/tracker/cve-2021-3560",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2021-3560"
+    ],
+    "exploitability_score": 1.8,
+    "impact_score": 5.9,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "original_description": "It was found that polkit could be tricked into bypassing the credential checks for D-Bus requests, elevating the privileges of the requestor to the root user. This flaw could be used by an unprivileged local attacker to, for example, create a new local administrator. The highest threat from this vulnerability is to data confidentiality and integrity as well as system availability.\n"
+   }
+  }
+ ],
+ "meta": {
+  "query_time": 0.429904994,
+  "pagination": {
+   "limit": 20,
+   "total": 8,
+   "after": ""
+  },
+  "powered_by": "spapi",
+  "trace_id": "4b294f3f-12f7-4ac8-bbdb-a30bb85a8533"
+ }
+}

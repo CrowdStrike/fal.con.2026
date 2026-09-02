@@ -1,0 +1,494 @@
+{
+ "resources": [
+  {
+   "id": "9f52f582320c413591bc1f2faf3522bd_d0d81edf681f3653b93732040d7c8792",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "9f52f582320c413591bc1f2faf3522bd",
+   "vulnerability_id": "CVE-2025-48384",
+   "vulnerability_metadata_id": "CS-V25-4838399",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:11:16Z",
+   "updated_timestamp": "2026-08-26T01:11:16Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "git 1:2.25.1-1ubuntu3.14",
+     "product_name_normalized": "git",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "0657c539d0d2327389db92ca44f73555"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "9d8f9b4e7da238cd9b0aa4af052f3f33"
+     },
+     "remediation_info": {
+      "recommended_id": "0657c539d0d2327389db92ca44f73555",
+      "minimum_id": "bd5a369a54033b7f91c627ace1653b60"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "host_info": {
+    "hostname": "WS-DEV-02",
+    "local_ip": "10.1.0.39",
+    "machine_domain": "",
+    "os_version": "Ubuntu 20.04",
+    "ou": "",
+    "site_name": "",
+    "system_manufacturer": "Amazon EC2",
+    "tags": [],
+    "platform": "Linux",
+    "instance_id": "i-094c80ba095d218af",
+    "service_provider_account_id": "245361883728",
+    "service_provider": "AWS",
+    "product_type_desc": "Server",
+    "asset_criticality": "Unassigned",
+    "internet_exposure": "Pending",
+    "managed_by": "Falcon sensor"
+   },
+   "cve": {
+    "id": "CVE-2025-48384",
+    "base_score": 8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-09-15T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-07-09T02:10:00Z",
+    "actors": [
+     "LABYRINTH CHOLLIMA",
+     "PRESSURE CHOLLIMA"
+    ],
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     ""
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-48384 is a Remote Code Execution vulnerability affecting Git, a distributed revision control system. When reading a config value, Git strips any trailing carriage return and line feed (CRLF), but when writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is actively exploited and affects Git versions v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, and v2.50.0. The vulnerability results in arbitrary code execution on developer workstations and servers when cloning malicious repositories with the --recursive flag.\n\n\n\nThreat intelligence\n\n\n\n\nRelated adversaries\n\n\n\nLABYRINTH CHOLLIMA (North Korea, State-Sponsored)\n\nPRESSURE CHOLLIMA (North Korea, State-Sponsored)\n\n\nRelated reports\n\n\n\nCSA-250952 LABYRINTH CHOLLIMA Likely Exploits Git Vulnerability CVE-2025-48384 to Initiate Infection Chain Targeting North American Software and Cryptocurrency Sectors\n\nCSA-260744 Additional Details of PRESSURE CHOLLIMA Delivering First-Stage Malware via Git Repositories\n\nCSDR-25165 CrowdStrike Daily Report: 27 August 2025\n\nCSIR-25027 Regional Threat Report: August 2025 Targeting Trends\n\nCSIR-25030 Sector Report: Technology Sector 2025 Targeting Trends\n\nCSIR-26011 Sector Report: Technology Sector 2026 Targeting Trends\n\nCSIT-26002 PRESSURE CHOLLIMA Adversary Profile\n\nCSIT-26054 Vulnerability Disclosure and ITW Exploitation from July 2024 to December 2025\n\nCSWR-25032 CrowdStrike Intelligence Weekly Report: Week of 9 August 2025\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/beishanxueyuan/CVE-2025-48384-test, https://github.com/butyraldehyde/CVE-2025-48384-PoC, https://github.com/jacobholtz/CVE-2025-48384-poc, https://github.com/nguyentranbaotran/cve-2025-48384-poc, https://github.com/ppd520/CVE-2025-48384, https://github.com/bummie/CVE-2025-48384, https://github.com/s41r4j/CVE-2025-48384-submodule, https://github.com/jideasn/cve-2025-48384, https://github.com/mukesh-610/cve-2025-48384, https://github.com/rtefx/CVE-2025-48384, https://github.com/testtianmaaaa/CVE-2025-48384, https://github.com/DayDayDayDreaming/backup-exec-cve-48384, https://github.com/IK-20211125/CVE-2025-48384, https://github.com/acheong08/CVE-2025-48384, https://github.com/replicatorbot/CVE-2025-48384-POC, https://github.com/testdjshan/CVE-2025-48384, https://github.com/f1shh/CVE-2025-48384, https://github.com/MarcoTondolo/cve-2025-48384-poc, https://github.com/altm4n/cve-2025-48384, https://github.com/fishyyh/CVE-2025-48384-POC, https://github.com/fluoworite/CVE-2025-48384, https://github.com/liamg/CVE-2025-48384, https://github.com/wzx5002/CVE-2025-48384, https://github.com/greatyy/CVE-2025-48384-p\n\nExploit details: The vulnerability exploits Git\u2019s inconsistent handling of carriage return characters in configuration files. When a submodule path contains a trailing \\r character, Git writes it to .gitmodules with double quotes, preserving the \\r. However, when this value is written to .git/modules/sub/config as the worktree parameter without quotes, Git later strips the trailing \\r when reading it. This causes a mismatch between the intended submodule directory name (e.g., sub\\r) and the actual checkout location (e.g., sub). An adversary can exploit this by creating a symlink named sub that points to .git/modules/sub/hooks, and placing a malicious post-checkout hook script in the submodule repository. When a victim clones the repository with git clone --recursive, the submodule is checked out to the symlink location, placing the adversary\u2019s post-checkout hook in the victim\u2019s .git/modules/sub/hooks/ directory. The hook is then automatically executed during the checkout process, achieving remote code execution. Proof of concept repositories demonstrate this by creating a post-checkout script that creates files (e.g., /tmp/fishsucks or /tmp/CVE-2025-48384), exfiltrates sensitive data like /etc/passwd to remote servers, or establishes reverse shells to adversary-controlled systems.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: Remote. The vulnerability can be exploited remotely by an adversary who can host a malicious Git repository or compromise an existing repository. The victim must clone the malicious repository with the --recursive flag to trigger the vulnerability, without requiring local access to the affected device.\n\nPrivileges: None. The adversary does not need any authentication or prior access to the victim\u2019s system. The vulnerability can be exploited without any credentials or established sessions, making it accessible to completely unauthenticated adversaries who can convince a victim to clone a malicious repository.\n\nUser interaction: Required (clone repository). The victim must execute a git clone --recursive command on the malicious repository to trigger the vulnerability. This requires the user to actively clone the repository with the recursive flag, which automatically initializes and checks out submodules, thereby executing the malicious post-checkout hook.\n\nConditions: The vulnerability requires the victim to use the --recursive flag when cloning the repository (or use git submodule update --init --recursive after cloning). The affected system must be running a vulnerable version of Git on a case-sensitive filesystem (Linux/Unix systems), as Windows filesystems do not allow carriage return characters in filenames.\n\n\n\nAffected Products\n\n\n\n\nGit: v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, v2.50.0\n\n\n\nMitigations\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-07-08T19:15:00Z",
+    "vendor_advisory": [
+     "https://github.com/git/git/security/advisories/GHSA-vwqx-4fm8-6qc9",
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-48384"
+    ],
+    "references": [
+     "http://seclists.org/fulldisclosure/2025/Sep/60",
+     "http://www.openwall.com/lists/oss-security/2025/07/08/4",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00003.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-48384"
+    ],
+    "exploitability_score": 1.3,
+    "impact_score": 6,
+    "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:H/A:H",
+    "original_description": "Git is a fast, scalable, distributed revision control system with an unusually rich command set that provides both high-level operations and full access to internals. When reading a config value, Git strips any trailing carriage return and line feed (CRLF). When writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is fixed in v2.43.7, v2.44.4, v2.45.4, v2.46.4, v2.47.3, v2.48.2, v2.49.1, and v2.50.1.\n"
+   }
+  },
+  {
+   "id": "ffd14c2909644380bd0cf9e8ce471c41_d0d81edf681f3653b93732040d7c8792",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "ffd14c2909644380bd0cf9e8ce471c41",
+   "vulnerability_id": "CVE-2025-48384",
+   "vulnerability_metadata_id": "CS-V25-4838399",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T01:16:33Z",
+   "updated_timestamp": "2026-08-26T01:16:33Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "git 1:2.25.1-1ubuntu3.14",
+     "product_name_normalized": "git",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "0657c539d0d2327389db92ca44f73555"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "e4ba640e40693352906fa4c8b2aa0941"
+     },
+     "remediation_info": {
+      "recommended_id": "0657c539d0d2327389db92ca44f73555",
+      "minimum_id": "bd5a369a54033b7f91c627ace1653b60"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "host_info": {
+    "hostname": "WS-DEV-01",
+    "local_ip": "10.1.0.11",
+    "machine_domain": "",
+    "os_version": "Ubuntu 20.04",
+    "ou": "",
+    "site_name": "",
+    "system_manufacturer": "Amazon EC2",
+    "tags": [],
+    "platform": "Linux",
+    "instance_id": "i-0016df4594a794d68",
+    "service_provider_account_id": "245361883728",
+    "service_provider": "AWS",
+    "product_type_desc": "Server",
+    "asset_criticality": "Unassigned",
+    "internet_exposure": "Pending",
+    "managed_by": "Falcon sensor"
+   },
+   "cve": {
+    "id": "CVE-2025-48384",
+    "base_score": 8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-09-15T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-07-09T02:10:00Z",
+    "actors": [
+     "LABYRINTH CHOLLIMA",
+     "PRESSURE CHOLLIMA"
+    ],
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     ""
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-48384 is a Remote Code Execution vulnerability affecting Git, a distributed revision control system. When reading a config value, Git strips any trailing carriage return and line feed (CRLF), but when writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is actively exploited and affects Git versions v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, and v2.50.0. The vulnerability results in arbitrary code execution on developer workstations and servers when cloning malicious repositories with the --recursive flag.\n\n\n\nThreat intelligence\n\n\n\n\nRelated adversaries\n\n\n\nLABYRINTH CHOLLIMA (North Korea, State-Sponsored)\n\nPRESSURE CHOLLIMA (North Korea, State-Sponsored)\n\n\nRelated reports\n\n\n\nCSA-250952 LABYRINTH CHOLLIMA Likely Exploits Git Vulnerability CVE-2025-48384 to Initiate Infection Chain Targeting North American Software and Cryptocurrency Sectors\n\nCSA-260744 Additional Details of PRESSURE CHOLLIMA Delivering First-Stage Malware via Git Repositories\n\nCSDR-25165 CrowdStrike Daily Report: 27 August 2025\n\nCSIR-25027 Regional Threat Report: August 2025 Targeting Trends\n\nCSIR-25030 Sector Report: Technology Sector 2025 Targeting Trends\n\nCSIR-26011 Sector Report: Technology Sector 2026 Targeting Trends\n\nCSIT-26002 PRESSURE CHOLLIMA Adversary Profile\n\nCSIT-26054 Vulnerability Disclosure and ITW Exploitation from July 2024 to December 2025\n\nCSWR-25032 CrowdStrike Intelligence Weekly Report: Week of 9 August 2025\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/beishanxueyuan/CVE-2025-48384-test, https://github.com/butyraldehyde/CVE-2025-48384-PoC, https://github.com/jacobholtz/CVE-2025-48384-poc, https://github.com/nguyentranbaotran/cve-2025-48384-poc, https://github.com/ppd520/CVE-2025-48384, https://github.com/bummie/CVE-2025-48384, https://github.com/s41r4j/CVE-2025-48384-submodule, https://github.com/jideasn/cve-2025-48384, https://github.com/mukesh-610/cve-2025-48384, https://github.com/rtefx/CVE-2025-48384, https://github.com/testtianmaaaa/CVE-2025-48384, https://github.com/DayDayDayDreaming/backup-exec-cve-48384, https://github.com/IK-20211125/CVE-2025-48384, https://github.com/acheong08/CVE-2025-48384, https://github.com/replicatorbot/CVE-2025-48384-POC, https://github.com/testdjshan/CVE-2025-48384, https://github.com/f1shh/CVE-2025-48384, https://github.com/MarcoTondolo/cve-2025-48384-poc, https://github.com/altm4n/cve-2025-48384, https://github.com/fishyyh/CVE-2025-48384-POC, https://github.com/fluoworite/CVE-2025-48384, https://github.com/liamg/CVE-2025-48384, https://github.com/wzx5002/CVE-2025-48384, https://github.com/greatyy/CVE-2025-48384-p\n\nExploit details: The vulnerability exploits Git\u2019s inconsistent handling of carriage return characters in configuration files. When a submodule path contains a trailing \\r character, Git writes it to .gitmodules with double quotes, preserving the \\r. However, when this value is written to .git/modules/sub/config as the worktree parameter without quotes, Git later strips the trailing \\r when reading it. This causes a mismatch between the intended submodule directory name (e.g., sub\\r) and the actual checkout location (e.g., sub). An adversary can exploit this by creating a symlink named sub that points to .git/modules/sub/hooks, and placing a malicious post-checkout hook script in the submodule repository. When a victim clones the repository with git clone --recursive, the submodule is checked out to the symlink location, placing the adversary\u2019s post-checkout hook in the victim\u2019s .git/modules/sub/hooks/ directory. The hook is then automatically executed during the checkout process, achieving remote code execution. Proof of concept repositories demonstrate this by creating a post-checkout script that creates files (e.g., /tmp/fishsucks or /tmp/CVE-2025-48384), exfiltrates sensitive data like /etc/passwd to remote servers, or establishes reverse shells to adversary-controlled systems.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: Remote. The vulnerability can be exploited remotely by an adversary who can host a malicious Git repository or compromise an existing repository. The victim must clone the malicious repository with the --recursive flag to trigger the vulnerability, without requiring local access to the affected device.\n\nPrivileges: None. The adversary does not need any authentication or prior access to the victim\u2019s system. The vulnerability can be exploited without any credentials or established sessions, making it accessible to completely unauthenticated adversaries who can convince a victim to clone a malicious repository.\n\nUser interaction: Required (clone repository). The victim must execute a git clone --recursive command on the malicious repository to trigger the vulnerability. This requires the user to actively clone the repository with the recursive flag, which automatically initializes and checks out submodules, thereby executing the malicious post-checkout hook.\n\nConditions: The vulnerability requires the victim to use the --recursive flag when cloning the repository (or use git submodule update --init --recursive after cloning). The affected system must be running a vulnerable version of Git on a case-sensitive filesystem (Linux/Unix systems), as Windows filesystems do not allow carriage return characters in filenames.\n\n\n\nAffected Products\n\n\n\n\nGit: v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, v2.50.0\n\n\n\nMitigations\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-07-08T19:15:00Z",
+    "vendor_advisory": [
+     "https://github.com/git/git/security/advisories/GHSA-vwqx-4fm8-6qc9",
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-48384"
+    ],
+    "references": [
+     "http://seclists.org/fulldisclosure/2025/Sep/60",
+     "http://www.openwall.com/lists/oss-security/2025/07/08/4",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00003.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-48384"
+    ],
+    "exploitability_score": 1.3,
+    "impact_score": 6,
+    "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:H/A:H",
+    "original_description": "Git is a fast, scalable, distributed revision control system with an unusually rich command set that provides both high-level operations and full access to internals. When reading a config value, Git strips any trailing carriage return and line feed (CRLF). When writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is fixed in v2.43.7, v2.44.4, v2.45.4, v2.46.4, v2.47.3, v2.48.2, v2.49.1, and v2.50.1.\n"
+   }
+  },
+  {
+   "id": "708396e0c7df4f6db7a2e60dd4b1f76b_d0d81edf681f3653b93732040d7c8792",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "708396e0c7df4f6db7a2e60dd4b1f76b",
+   "vulnerability_id": "CVE-2025-48384",
+   "vulnerability_metadata_id": "CS-V25-4838399",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T07:33:55Z",
+   "updated_timestamp": "2026-08-26T07:33:55Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "git 1:2.25.1-1ubuntu3.14",
+     "product_name_normalized": "git",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "0657c539d0d2327389db92ca44f73555"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "b62590b8d38b37e49be4add19654c839"
+     },
+     "remediation_info": {
+      "recommended_id": "0657c539d0d2327389db92ca44f73555",
+      "minimum_id": "bd5a369a54033b7f91c627ace1653b60"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "host_info": {
+    "hostname": "WS-DEV-04",
+    "local_ip": "10.1.0.43",
+    "machine_domain": "",
+    "os_version": "Ubuntu 20.04",
+    "ou": "",
+    "site_name": "",
+    "system_manufacturer": "Amazon EC2",
+    "tags": [],
+    "platform": "Linux",
+    "instance_id": "i-09941d2d72c7dd599",
+    "service_provider_account_id": "245361883728",
+    "service_provider": "AWS",
+    "product_type_desc": "Server",
+    "asset_criticality": "Unassigned",
+    "internet_exposure": "Pending",
+    "managed_by": "Falcon sensor"
+   },
+   "cve": {
+    "id": "CVE-2025-48384",
+    "base_score": 8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-09-15T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-07-09T02:10:00Z",
+    "actors": [
+     "LABYRINTH CHOLLIMA",
+     "PRESSURE CHOLLIMA"
+    ],
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     ""
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-48384 is a Remote Code Execution vulnerability affecting Git, a distributed revision control system. When reading a config value, Git strips any trailing carriage return and line feed (CRLF), but when writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is actively exploited and affects Git versions v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, and v2.50.0. The vulnerability results in arbitrary code execution on developer workstations and servers when cloning malicious repositories with the --recursive flag.\n\n\n\nThreat intelligence\n\n\n\n\nRelated adversaries\n\n\n\nLABYRINTH CHOLLIMA (North Korea, State-Sponsored)\n\nPRESSURE CHOLLIMA (North Korea, State-Sponsored)\n\n\nRelated reports\n\n\n\nCSA-250952 LABYRINTH CHOLLIMA Likely Exploits Git Vulnerability CVE-2025-48384 to Initiate Infection Chain Targeting North American Software and Cryptocurrency Sectors\n\nCSA-260744 Additional Details of PRESSURE CHOLLIMA Delivering First-Stage Malware via Git Repositories\n\nCSDR-25165 CrowdStrike Daily Report: 27 August 2025\n\nCSIR-25027 Regional Threat Report: August 2025 Targeting Trends\n\nCSIR-25030 Sector Report: Technology Sector 2025 Targeting Trends\n\nCSIR-26011 Sector Report: Technology Sector 2026 Targeting Trends\n\nCSIT-26002 PRESSURE CHOLLIMA Adversary Profile\n\nCSIT-26054 Vulnerability Disclosure and ITW Exploitation from July 2024 to December 2025\n\nCSWR-25032 CrowdStrike Intelligence Weekly Report: Week of 9 August 2025\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/beishanxueyuan/CVE-2025-48384-test, https://github.com/butyraldehyde/CVE-2025-48384-PoC, https://github.com/jacobholtz/CVE-2025-48384-poc, https://github.com/nguyentranbaotran/cve-2025-48384-poc, https://github.com/ppd520/CVE-2025-48384, https://github.com/bummie/CVE-2025-48384, https://github.com/s41r4j/CVE-2025-48384-submodule, https://github.com/jideasn/cve-2025-48384, https://github.com/mukesh-610/cve-2025-48384, https://github.com/rtefx/CVE-2025-48384, https://github.com/testtianmaaaa/CVE-2025-48384, https://github.com/DayDayDayDreaming/backup-exec-cve-48384, https://github.com/IK-20211125/CVE-2025-48384, https://github.com/acheong08/CVE-2025-48384, https://github.com/replicatorbot/CVE-2025-48384-POC, https://github.com/testdjshan/CVE-2025-48384, https://github.com/f1shh/CVE-2025-48384, https://github.com/MarcoTondolo/cve-2025-48384-poc, https://github.com/altm4n/cve-2025-48384, https://github.com/fishyyh/CVE-2025-48384-POC, https://github.com/fluoworite/CVE-2025-48384, https://github.com/liamg/CVE-2025-48384, https://github.com/wzx5002/CVE-2025-48384, https://github.com/greatyy/CVE-2025-48384-p\n\nExploit details: The vulnerability exploits Git\u2019s inconsistent handling of carriage return characters in configuration files. When a submodule path contains a trailing \\r character, Git writes it to .gitmodules with double quotes, preserving the \\r. However, when this value is written to .git/modules/sub/config as the worktree parameter without quotes, Git later strips the trailing \\r when reading it. This causes a mismatch between the intended submodule directory name (e.g., sub\\r) and the actual checkout location (e.g., sub). An adversary can exploit this by creating a symlink named sub that points to .git/modules/sub/hooks, and placing a malicious post-checkout hook script in the submodule repository. When a victim clones the repository with git clone --recursive, the submodule is checked out to the symlink location, placing the adversary\u2019s post-checkout hook in the victim\u2019s .git/modules/sub/hooks/ directory. The hook is then automatically executed during the checkout process, achieving remote code execution. Proof of concept repositories demonstrate this by creating a post-checkout script that creates files (e.g., /tmp/fishsucks or /tmp/CVE-2025-48384), exfiltrates sensitive data like /etc/passwd to remote servers, or establishes reverse shells to adversary-controlled systems.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: Remote. The vulnerability can be exploited remotely by an adversary who can host a malicious Git repository or compromise an existing repository. The victim must clone the malicious repository with the --recursive flag to trigger the vulnerability, without requiring local access to the affected device.\n\nPrivileges: None. The adversary does not need any authentication or prior access to the victim\u2019s system. The vulnerability can be exploited without any credentials or established sessions, making it accessible to completely unauthenticated adversaries who can convince a victim to clone a malicious repository.\n\nUser interaction: Required (clone repository). The victim must execute a git clone --recursive command on the malicious repository to trigger the vulnerability. This requires the user to actively clone the repository with the recursive flag, which automatically initializes and checks out submodules, thereby executing the malicious post-checkout hook.\n\nConditions: The vulnerability requires the victim to use the --recursive flag when cloning the repository (or use git submodule update --init --recursive after cloning). The affected system must be running a vulnerable version of Git on a case-sensitive filesystem (Linux/Unix systems), as Windows filesystems do not allow carriage return characters in filenames.\n\n\n\nAffected Products\n\n\n\n\nGit: v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, v2.50.0\n\n\n\nMitigations\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-07-08T19:15:00Z",
+    "vendor_advisory": [
+     "https://github.com/git/git/security/advisories/GHSA-vwqx-4fm8-6qc9",
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-48384"
+    ],
+    "references": [
+     "http://seclists.org/fulldisclosure/2025/Sep/60",
+     "http://www.openwall.com/lists/oss-security/2025/07/08/4",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00003.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-48384"
+    ],
+    "exploitability_score": 1.3,
+    "impact_score": 6,
+    "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:H/A:H",
+    "original_description": "Git is a fast, scalable, distributed revision control system with an unusually rich command set that provides both high-level operations and full access to internals. When reading a config value, Git strips any trailing carriage return and line feed (CRLF). When writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is fixed in v2.43.7, v2.44.4, v2.45.4, v2.46.4, v2.47.3, v2.48.2, v2.49.1, and v2.50.1.\n"
+   }
+  },
+  {
+   "id": "a2c57e6e9c774508bc06fdbc72237699_d0d81edf681f3653b93732040d7c8792",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "a2c57e6e9c774508bc06fdbc72237699",
+   "vulnerability_id": "CVE-2025-48384",
+   "vulnerability_metadata_id": "CS-V25-4838399",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T08:33:25Z",
+   "updated_timestamp": "2026-08-26T08:33:25Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "git 1:2.25.1-1ubuntu3.14",
+     "product_name_normalized": "git",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "0657c539d0d2327389db92ca44f73555"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "963cb2bde56530389bd949f86d9d2882"
+     },
+     "remediation_info": {
+      "recommended_id": "0657c539d0d2327389db92ca44f73555",
+      "minimum_id": "bd5a369a54033b7f91c627ace1653b60"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "host_info": {
+    "hostname": "WS-DEV-05",
+    "local_ip": "10.1.0.19",
+    "machine_domain": "",
+    "os_version": "Ubuntu 20.04",
+    "ou": "",
+    "site_name": "",
+    "system_manufacturer": "Amazon EC2",
+    "tags": [],
+    "platform": "Linux",
+    "instance_id": "i-0a3f022e6098a14b1",
+    "service_provider_account_id": "245361883728",
+    "service_provider": "AWS",
+    "product_type_desc": "Server",
+    "asset_criticality": "Unassigned",
+    "internet_exposure": "Pending",
+    "managed_by": "Falcon sensor"
+   },
+   "cve": {
+    "id": "CVE-2025-48384",
+    "base_score": 8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-09-15T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-07-09T02:10:00Z",
+    "actors": [
+     "LABYRINTH CHOLLIMA",
+     "PRESSURE CHOLLIMA"
+    ],
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     ""
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-48384 is a Remote Code Execution vulnerability affecting Git, a distributed revision control system. When reading a config value, Git strips any trailing carriage return and line feed (CRLF), but when writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is actively exploited and affects Git versions v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, and v2.50.0. The vulnerability results in arbitrary code execution on developer workstations and servers when cloning malicious repositories with the --recursive flag.\n\n\n\nThreat intelligence\n\n\n\n\nRelated adversaries\n\n\n\nLABYRINTH CHOLLIMA (North Korea, State-Sponsored)\n\nPRESSURE CHOLLIMA (North Korea, State-Sponsored)\n\n\nRelated reports\n\n\n\nCSA-250952 LABYRINTH CHOLLIMA Likely Exploits Git Vulnerability CVE-2025-48384 to Initiate Infection Chain Targeting North American Software and Cryptocurrency Sectors\n\nCSA-260744 Additional Details of PRESSURE CHOLLIMA Delivering First-Stage Malware via Git Repositories\n\nCSDR-25165 CrowdStrike Daily Report: 27 August 2025\n\nCSIR-25027 Regional Threat Report: August 2025 Targeting Trends\n\nCSIR-25030 Sector Report: Technology Sector 2025 Targeting Trends\n\nCSIR-26011 Sector Report: Technology Sector 2026 Targeting Trends\n\nCSIT-26002 PRESSURE CHOLLIMA Adversary Profile\n\nCSIT-26054 Vulnerability Disclosure and ITW Exploitation from July 2024 to December 2025\n\nCSWR-25032 CrowdStrike Intelligence Weekly Report: Week of 9 August 2025\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/beishanxueyuan/CVE-2025-48384-test, https://github.com/butyraldehyde/CVE-2025-48384-PoC, https://github.com/jacobholtz/CVE-2025-48384-poc, https://github.com/nguyentranbaotran/cve-2025-48384-poc, https://github.com/ppd520/CVE-2025-48384, https://github.com/bummie/CVE-2025-48384, https://github.com/s41r4j/CVE-2025-48384-submodule, https://github.com/jideasn/cve-2025-48384, https://github.com/mukesh-610/cve-2025-48384, https://github.com/rtefx/CVE-2025-48384, https://github.com/testtianmaaaa/CVE-2025-48384, https://github.com/DayDayDayDreaming/backup-exec-cve-48384, https://github.com/IK-20211125/CVE-2025-48384, https://github.com/acheong08/CVE-2025-48384, https://github.com/replicatorbot/CVE-2025-48384-POC, https://github.com/testdjshan/CVE-2025-48384, https://github.com/f1shh/CVE-2025-48384, https://github.com/MarcoTondolo/cve-2025-48384-poc, https://github.com/altm4n/cve-2025-48384, https://github.com/fishyyh/CVE-2025-48384-POC, https://github.com/fluoworite/CVE-2025-48384, https://github.com/liamg/CVE-2025-48384, https://github.com/wzx5002/CVE-2025-48384, https://github.com/greatyy/CVE-2025-48384-p\n\nExploit details: The vulnerability exploits Git\u2019s inconsistent handling of carriage return characters in configuration files. When a submodule path contains a trailing \\r character, Git writes it to .gitmodules with double quotes, preserving the \\r. However, when this value is written to .git/modules/sub/config as the worktree parameter without quotes, Git later strips the trailing \\r when reading it. This causes a mismatch between the intended submodule directory name (e.g., sub\\r) and the actual checkout location (e.g., sub). An adversary can exploit this by creating a symlink named sub that points to .git/modules/sub/hooks, and placing a malicious post-checkout hook script in the submodule repository. When a victim clones the repository with git clone --recursive, the submodule is checked out to the symlink location, placing the adversary\u2019s post-checkout hook in the victim\u2019s .git/modules/sub/hooks/ directory. The hook is then automatically executed during the checkout process, achieving remote code execution. Proof of concept repositories demonstrate this by creating a post-checkout script that creates files (e.g., /tmp/fishsucks or /tmp/CVE-2025-48384), exfiltrates sensitive data like /etc/passwd to remote servers, or establishes reverse shells to adversary-controlled systems.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: Remote. The vulnerability can be exploited remotely by an adversary who can host a malicious Git repository or compromise an existing repository. The victim must clone the malicious repository with the --recursive flag to trigger the vulnerability, without requiring local access to the affected device.\n\nPrivileges: None. The adversary does not need any authentication or prior access to the victim\u2019s system. The vulnerability can be exploited without any credentials or established sessions, making it accessible to completely unauthenticated adversaries who can convince a victim to clone a malicious repository.\n\nUser interaction: Required (clone repository). The victim must execute a git clone --recursive command on the malicious repository to trigger the vulnerability. This requires the user to actively clone the repository with the recursive flag, which automatically initializes and checks out submodules, thereby executing the malicious post-checkout hook.\n\nConditions: The vulnerability requires the victim to use the --recursive flag when cloning the repository (or use git submodule update --init --recursive after cloning). The affected system must be running a vulnerable version of Git on a case-sensitive filesystem (Linux/Unix systems), as Windows filesystems do not allow carriage return characters in filenames.\n\n\n\nAffected Products\n\n\n\n\nGit: v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, v2.50.0\n\n\n\nMitigations\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-07-08T19:15:00Z",
+    "vendor_advisory": [
+     "https://github.com/git/git/security/advisories/GHSA-vwqx-4fm8-6qc9",
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-48384"
+    ],
+    "references": [
+     "http://seclists.org/fulldisclosure/2025/Sep/60",
+     "http://www.openwall.com/lists/oss-security/2025/07/08/4",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00003.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-48384"
+    ],
+    "exploitability_score": 1.3,
+    "impact_score": 6,
+    "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:H/A:H",
+    "original_description": "Git is a fast, scalable, distributed revision control system with an unusually rich command set that provides both high-level operations and full access to internals. When reading a config value, Git strips any trailing carriage return and line feed (CRLF). When writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is fixed in v2.43.7, v2.44.4, v2.45.4, v2.46.4, v2.47.3, v2.48.2, v2.49.1, and v2.50.1.\n"
+   }
+  },
+  {
+   "id": "f347f4d28e7b461bb49b1979550e813e_d0d81edf681f3653b93732040d7c8792",
+   "cid": "38be56be14df4dbea643737b9361fd69",
+   "aid": "f347f4d28e7b461bb49b1979550e813e",
+   "vulnerability_id": "CVE-2025-48384",
+   "vulnerability_metadata_id": "CS-V25-4838399",
+   "data_providers": [
+    {
+     "provider": "Falcon sensor"
+    }
+   ],
+   "created_timestamp": "2026-08-26T11:27:23Z",
+   "updated_timestamp": "2026-08-26T11:27:23Z",
+   "status": "open",
+   "apps": [
+    {
+     "vendor_normalized": "Ubuntu",
+     "product_name_version": "git 1:2.25.1-1ubuntu3.14",
+     "product_name_normalized": "git",
+     "sub_status": "open",
+     "remediation": {
+      "ids": [
+       "0657c539d0d2327389db92ca44f73555"
+      ]
+     },
+     "evaluation_logic": {
+      "id": "d0a4223e840c3c4dbdca44855ba20824"
+     },
+     "remediation_info": {
+      "recommended_id": "0657c539d0d2327389db92ca44f73555",
+      "minimum_id": "bd5a369a54033b7f91c627ace1653b60"
+     }
+    }
+   ],
+   "suppression_info": {
+    "is_suppressed": false
+   },
+   "confidence": "confirmed",
+   "host_info": {
+    "hostname": "WS-DEV-03",
+    "local_ip": "10.1.0.24",
+    "machine_domain": "",
+    "os_version": "Ubuntu 20.04",
+    "ou": "",
+    "site_name": "",
+    "system_manufacturer": "Amazon EC2",
+    "tags": [],
+    "platform": "Linux",
+    "instance_id": "i-0920163f5bcda4941",
+    "service_provider_account_id": "245361883728",
+    "service_provider": "AWS",
+    "product_type_desc": "Server",
+    "asset_criticality": "Unassigned",
+    "internet_exposure": "Pending",
+    "managed_by": "Falcon sensor"
+   },
+   "cve": {
+    "id": "CVE-2025-48384",
+    "base_score": 8,
+    "severity": "HIGH",
+    "exploit_status": 90,
+    "exprt_rating": "CRITICAL",
+    "remediation_level": "O",
+    "cisa_info": {
+     "is_cisa_kev": true,
+     "due_date": "2025-09-15T00:00:00Z"
+    },
+    "spotlight_published_date": "2025-07-09T02:10:00Z",
+    "actors": [
+     "LABYRINTH CHOLLIMA",
+     "PRESSURE CHOLLIMA"
+    ],
+    "types": [
+     "Vulnerability"
+    ],
+    "cwes": [
+     ""
+    ],
+    "description": "Summary\n\n\n\nCVE-2025-48384 is a Remote Code Execution vulnerability affecting Git, a distributed revision control system. When reading a config value, Git strips any trailing carriage return and line feed (CRLF), but when writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is actively exploited and affects Git versions v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, and v2.50.0. The vulnerability results in arbitrary code execution on developer workstations and servers when cloning malicious repositories with the --recursive flag.\n\n\n\nThreat intelligence\n\n\n\n\nRelated adversaries\n\n\n\nLABYRINTH CHOLLIMA (North Korea, State-Sponsored)\n\nPRESSURE CHOLLIMA (North Korea, State-Sponsored)\n\n\nRelated reports\n\n\n\nCSA-250952 LABYRINTH CHOLLIMA Likely Exploits Git Vulnerability CVE-2025-48384 to Initiate Infection Chain Targeting North American Software and Cryptocurrency Sectors\n\nCSA-260744 Additional Details of PRESSURE CHOLLIMA Delivering First-Stage Malware via Git Repositories\n\nCSDR-25165 CrowdStrike Daily Report: 27 August 2025\n\nCSIR-25027 Regional Threat Report: August 2025 Targeting Trends\n\nCSIR-25030 Sector Report: Technology Sector 2025 Targeting Trends\n\nCSIR-26011 Sector Report: Technology Sector 2026 Targeting Trends\n\nCSIT-26002 PRESSURE CHOLLIMA Adversary Profile\n\nCSIT-26054 Vulnerability Disclosure and ITW Exploitation from July 2024 to December 2025\n\nCSWR-25032 CrowdStrike Intelligence Weekly Report: Week of 9 August 2025\n\n\n\n\nExploitability\n\n\n\n\nExploit status: Actively used\n\nExploit code: https://github.com/beishanxueyuan/CVE-2025-48384-test, https://github.com/butyraldehyde/CVE-2025-48384-PoC, https://github.com/jacobholtz/CVE-2025-48384-poc, https://github.com/nguyentranbaotran/cve-2025-48384-poc, https://github.com/ppd520/CVE-2025-48384, https://github.com/bummie/CVE-2025-48384, https://github.com/s41r4j/CVE-2025-48384-submodule, https://github.com/jideasn/cve-2025-48384, https://github.com/mukesh-610/cve-2025-48384, https://github.com/rtefx/CVE-2025-48384, https://github.com/testtianmaaaa/CVE-2025-48384, https://github.com/DayDayDayDreaming/backup-exec-cve-48384, https://github.com/IK-20211125/CVE-2025-48384, https://github.com/acheong08/CVE-2025-48384, https://github.com/replicatorbot/CVE-2025-48384-POC, https://github.com/testdjshan/CVE-2025-48384, https://github.com/f1shh/CVE-2025-48384, https://github.com/MarcoTondolo/cve-2025-48384-poc, https://github.com/altm4n/cve-2025-48384, https://github.com/fishyyh/CVE-2025-48384-POC, https://github.com/fluoworite/CVE-2025-48384, https://github.com/liamg/CVE-2025-48384, https://github.com/wzx5002/CVE-2025-48384, https://github.com/greatyy/CVE-2025-48384-p\n\nExploit details: The vulnerability exploits Git\u2019s inconsistent handling of carriage return characters in configuration files. When a submodule path contains a trailing \\r character, Git writes it to .gitmodules with double quotes, preserving the \\r. However, when this value is written to .git/modules/sub/config as the worktree parameter without quotes, Git later strips the trailing \\r when reading it. This causes a mismatch between the intended submodule directory name (e.g., sub\\r) and the actual checkout location (e.g., sub). An adversary can exploit this by creating a symlink named sub that points to .git/modules/sub/hooks, and placing a malicious post-checkout hook script in the submodule repository. When a victim clones the repository with git clone --recursive, the submodule is checked out to the symlink location, placing the adversary\u2019s post-checkout hook in the victim\u2019s .git/modules/sub/hooks/ directory. The hook is then automatically executed during the checkout process, achieving remote code execution. Proof of concept repositories demonstrate this by creating a post-checkout script that creates files (e.g., /tmp/fishsucks or /tmp/CVE-2025-48384), exfiltrates sensitive data like /etc/passwd to remote servers, or establishes reverse shells to adversary-controlled systems.\n\n\n\nExploit Requirements\n\n\n\n\nLocation: Remote. The vulnerability can be exploited remotely by an adversary who can host a malicious Git repository or compromise an existing repository. The victim must clone the malicious repository with the --recursive flag to trigger the vulnerability, without requiring local access to the affected device.\n\nPrivileges: None. The adversary does not need any authentication or prior access to the victim\u2019s system. The vulnerability can be exploited without any credentials or established sessions, making it accessible to completely unauthenticated adversaries who can convince a victim to clone a malicious repository.\n\nUser interaction: Required (clone repository). The victim must execute a git clone --recursive command on the malicious repository to trigger the vulnerability. This requires the user to actively clone the repository with the recursive flag, which automatically initializes and checks out submodules, thereby executing the malicious post-checkout hook.\n\nConditions: The vulnerability requires the victim to use the --recursive flag when cloning the repository (or use git submodule update --init --recursive after cloning). The affected system must be running a vulnerable version of Git on a case-sensitive filesystem (Linux/Unix systems), as Windows filesystems do not allow carriage return characters in filenames.\n\n\n\nAffected Products\n\n\n\n\nGit: v2.43.6 and prior, v2.44.0-v2.44.3, v2.45.0-v2.45.3, v2.46.0-v2.46.3, v2.47.0-v2.47.2, v2.48.0-v2.48.1, v2.49.0, v2.50.0\n\n\n\nMitigations\n\n\n\nReview any recommended remediations",
+    "published_date": "2025-07-08T19:15:00Z",
+    "vendor_advisory": [
+     "https://github.com/git/git/security/advisories/GHSA-vwqx-4fm8-6qc9",
+     "https://msrc.microsoft.com/update-guide/en-us/vulnerability/CVE-2025-48384"
+    ],
+    "references": [
+     "http://seclists.org/fulldisclosure/2025/Sep/60",
+     "http://www.openwall.com/lists/oss-security/2025/07/08/4",
+     "https://lists.debian.org/debian-lts-announce/2025/10/msg00003.html",
+     "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-48384"
+    ],
+    "exploitability_score": 1.3,
+    "impact_score": 6,
+    "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:H/A:H",
+    "original_description": "Git is a fast, scalable, distributed revision control system with an unusually rich command set that provides both high-level operations and full access to internals. When reading a config value, Git strips any trailing carriage return and line feed (CRLF). When writing a config entry, values with a trailing CR are not quoted, causing the CR to be lost when the config is later read. When initializing a submodule, if the submodule path contains a trailing CR, the altered path is read resulting in the submodule being checked out to an incorrect location. If a symlink exists that points the altered path to the submodule hooks directory, and the submodule contains an executable post-checkout hook, the script may be unintentionally executed after checkout. This vulnerability is fixed in v2.43.7, v2.44.4, v2.45.4, v2.46.4, v2.47.3, v2.48.2, v2.49.1, and v2.50.1.\n"
+   }
+  }
+ ],
+ "meta": {
+  "query_time": 0.674770557,
+  "pagination": {
+   "limit": 100,
+   "total": 5,
+   "after": ""
+  },
+  "powered_by": "spapi",
+  "trace_id": "2d92ae2b-1464-456a-929a-ad874224ea7d"
+ }
+}

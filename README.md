@@ -13,6 +13,7 @@ This repository contains distributable content discussed during Fal.CON 2026 bre
 | [BK-1414](BK1414) | Building a Unified Identity Investigation Dashboard in Falcon Next-Gen SIEM |
 | [BK-1415](BK1415) | AI as Your Security Engineering Pair Programmer: Lessons from AI-Driven Development in the field |
 | [BK-1416](BK1416) | Incident Response at Scale - Building Bulk Discovery and Containment Workflows in Falcon Fusion |
+| [BK-1541](BK1541) | Hands On: Putting the CrowdStrike APIs to Work |
 
 ---
 
